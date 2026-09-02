@@ -1,0 +1,50 @@
+{
+  "_description": "Hand-computed expected values for the fixture CSVs in this directory. Used by integration tests to verify app.analytics.* functions independently of the implementation (M1 exit criteria: 'all primary metrics match independent SQL fixtures').",
+  "periods": {
+    "comparison": { "start": "2017-12-01", "end": "2017-12-31" },
+    "current": { "start": "2018-01-01", "end": "2018-01-31" }
+  },
+  "product_revenue": {
+    "comparison": 250.00,
+    "current": 150.00,
+    "absolute_change": -100.00,
+    "percent_change": -0.40
+  },
+  "orders": {
+    "comparison": 3,
+    "current": 2,
+    "absolute_change": -1,
+    "percent_change": -0.333333
+  },
+  "average_order_value": {
+    "comparison": 83.333333,
+    "current": 75.00,
+    "absolute_change": -8.333333,
+    "percent_change": -0.10
+  },
+  "cancellation_rate": {
+    "comparison": 0.25,
+    "current": 0.50,
+    "absolute_change_pp": 0.25
+  },
+  "review_score": {
+    "comparison": { "average": 4.666667, "count": 3 },
+    "current": { "average": 3.5, "count": 2 }
+  },
+  "segment_by_customer_state": {
+    "comparison": { "SP": 150.00, "RJ": 100.00 },
+    "current": { "SP": 100.00, "RJ": 50.00 },
+    "contribution_to_total_change": {
+      "SP": { "change": -50.00, "share_of_total_change": 0.50 },
+      "RJ": { "change": -50.00, "share_of_total_change": 0.50 }
+    }
+  },
+  "segment_by_product_category": {
+    "comparison": { "beleza_saude": 200.00, "informatica_acessorios": 50.00 },
+    "current": { "beleza_saude": 100.00, "informatica_acessorios": 50.00 },
+    "contribution_to_total_change": {
+      "beleza_saude": { "change": -100.00, "share_of_total_change": 1.00 },
+      "informatica_acessorios": { "change": 0.00, "share_of_total_change": 0.00 }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+customer_id,customer_unique_id,customer_zip_code_prefix,customer_city,customer_state
+cust-1,unique-1,01001,sao paulo,SP
+cust-2,unique-2,01002,sao paulo,SP
+cust-3,unique-3,20000,rio de janeiro,RJ
+cust-4,unique-4,20001,rio de janeiro,RJ

@@ -1,0 +1,9 @@
+order_id,order_item_id,product_id,seller_id,shipping_limit_date,price,freight_value
+order-c1,1,prod-A,seller-1,2017-12-08 00:00:00,100.00,10.00
+order-c2,1,prod-B,seller-1,2017-12-13 00:00:00,50.00,5.00
+order-c3,1,prod-A,seller-1,2017-12-18 00:00:00,100.00,10.00
+order-c4,1,prod-B,seller-1,2017-12-23 00:00:00,50.00,5.00
+order-j1,1,prod-A,seller-1,2018-01-08 00:00:00,100.00,10.00
+order-j2,1,prod-A,seller-1,2018-01-11 00:00:00,100.00,10.00
+order-j3,1,prod-B,seller-1,2018-01-15 00:00:00,50.00,5.00
+order-j4,1,prod-B,seller-1,2018-01-23 00:00:00,50.00,5.00
