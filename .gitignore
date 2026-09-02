@@ -1,0 +1,35 @@
+# Environment
+.env
+.env.local
+
+# Python
+apps/api/.venv/
+apps/api/__pycache__/
+**/__pycache__/
+*.pyc
+apps/api/.pytest_cache/
+apps/api/.mypy_cache/
+apps/api/.ruff_cache/
+apps/api/*.egg-info/
+
+# Node
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/coverage/
+
+# Data (never commit raw or licensed dataset files)
+data/raw/*
+!data/raw/.gitkeep
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Playwright MCP manual-verification artifacts
+.playwright-mcp/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
