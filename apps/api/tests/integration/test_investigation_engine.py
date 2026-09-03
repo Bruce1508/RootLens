@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.analytics.schemas import ToolResult
 from app.investigations import engine
+from app.investigations.report_schemas import ReportFinding, ReportNarrative
 from app.llm.schemas import DecompositionPlan
-from app.models import Hypothesis, Investigation, InvestigationEvent
+from app.models import Hypothesis, Investigation, InvestigationEvent, Report
 
 
 def _make_investigation(session: Session) -> Investigation:
@@ -43,14 +44,35 @@ def _tool_result(tool_name: str, rows: list[dict]) -> ToolResult:
 
 
 class _FakeLLM:
-    def __init__(self, plan: DecompositionPlan) -> None:
+    def __init__(self, plan: DecompositionPlan, narrative: ReportNarrative | None = None) -> None:
         self._plan = plan
+        self._narrative = narrative
 
     def generate_structured(self, prompt: str, schema: type, model: str | None = None) -> object:
-        return self._plan
+        if schema is DecompositionPlan:
+            return self._plan
+        if schema is ReportNarrative and self._narrative is not None:
+            return self._narrative
+        raise AssertionError(f"unexpected generate_structured call for schema {schema}")
 
     def health_check(self) -> bool:
         return True
+
+
+def _narrative_citing(*evidence_ids: str) -> ReportNarrative:
+    return ReportNarrative(
+        headline="Order volume decline concentrated in one segment",
+        findings=[
+            ReportFinding(
+                claim="Order volume fell while average order value stayed roughly flat.",
+                claim_type="observed_fact",
+                evidence_ids=list(evidence_ids),
+                confidence="medium",
+            )
+        ],
+        limitations=["Fixture-only test data."],
+        recommended_next_checks=["Inspect delivery delay for the same period."],
+    )
 
 
 _REVENUE_RESULT = _tool_result(
@@ -92,11 +114,15 @@ def test_run_investigation_completes_and_supports_hypothesis_on_concentrated_con
         [{"segment_value": "SP", "change": -200.0, "share_of_total_change": 0.8}],
     )
 
+    narrative = _narrative_citing(_REVENUE_RESULT.evidence_id, contribution_result.evidence_id)
+
     with (
         patch.object(engine, "compare_periods", side_effect=[_REVENUE_RESULT, _ORDERS_RESULT]),
         patch.object(engine, "calculate_contribution", return_value=contribution_result),
     ):
-        engine.run_investigation(db_session, _FakeLLM(_PLAN), investigation.investigation_id)
+        engine.run_investigation(
+            db_session, _FakeLLM(_PLAN, narrative), investigation.investigation_id
+        )
 
     db_session.refresh(investigation)
     assert investigation.status == "completed"
@@ -122,6 +148,15 @@ def test_run_investigation_completes_and_supports_hypothesis_on_concentrated_con
     tool_call_events = [e for e in events if e.event_type == "tool_call"]
     assert len(tool_call_events) == 3
 
+    report = db_session.execute(
+        select(Report).where(Report.investigation_id == investigation.investigation_id)
+    ).scalar_one()
+    assert report.status == "answered"
+    assert report.findings[0]["evidence_ids"] == [
+        _REVENUE_RESULT.evidence_id,
+        contribution_result.evidence_id,
+    ]
+
 
 def test_run_investigation_marks_hypothesis_inconclusive_when_contribution_not_concentrated(
     db_session: Session,
@@ -132,11 +167,15 @@ def test_run_investigation_marks_hypothesis_inconclusive_when_contribution_not_c
         [{"segment_value": "SP", "change": -50.0, "share_of_total_change": 0.2}],
     )
 
+    narrative = _narrative_citing(_REVENUE_RESULT.evidence_id, contribution_result.evidence_id)
+
     with (
         patch.object(engine, "compare_periods", side_effect=[_REVENUE_RESULT, _ORDERS_RESULT]),
         patch.object(engine, "calculate_contribution", return_value=contribution_result),
     ):
-        engine.run_investigation(db_session, _FakeLLM(_PLAN), investigation.investigation_id)
+        engine.run_investigation(
+            db_session, _FakeLLM(_PLAN, narrative), investigation.investigation_id
+        )
 
     db_session.refresh(investigation)
     assert investigation.status == "completed"
@@ -146,6 +185,11 @@ def test_run_investigation_marks_hypothesis_inconclusive_when_contribution_not_c
     ).scalar_one()
     assert hypothesis.status == "inconclusive"
     assert hypothesis.confidence == "low"
+
+    report = db_session.execute(
+        select(Report).where(Report.investigation_id == investigation.investigation_id)
+    ).scalar_one()
+    assert report.status == "partial"
 
 
 def test_run_investigation_raises_for_unknown_investigation_id(db_session: Session) -> None:
