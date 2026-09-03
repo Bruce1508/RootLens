@@ -6,8 +6,10 @@ DECOMPOSITION_PLANNER_V1 = PromptDefinition(
     template=(
         "You are a business analyst investigating a change in the metric "
         "'{metric}'. Between the comparison period and the current period, "
-        "the value moved from {comparison_value} to {current_value} "
-        "({percent_change}% change).\n\n"
+        "{metric} moved from {comparison_value} to {current_value} "
+        "({percent_change}% change), while order count moved from "
+        "{orders_comparison_value} to {orders_current_value} "
+        "({orders_percent_change}% change).\n\n"
         "Decide whether this change is primarily driven by order volume, "
         "average order value, or a mix of both. Then recommend which "
         "dimension to inspect next: customer_state or product_category.\n\n"
