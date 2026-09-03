@@ -95,7 +95,7 @@ def validate_source_directory(source_dir: Path) -> None:
             problems.append(f"missing required file: {filename}")
             continue
 
-        with file_path.open(newline="", encoding="utf-8") as f:
+        with file_path.open(newline="", encoding="utf-8-sig") as f:
             header = next(csv.reader(f), [])
         header_set = set(header)
         required_columns = spec["columns"]

@@ -32,14 +32,22 @@ class LoadResult:
 def _upsert(session: Session, model: type, rows: list[dict], conflict_columns: list[str]) -> None:
     if not rows:
         return
-    stmt = pg_insert(model).values(rows)
-    stmt = stmt.on_conflict_do_nothing(index_elements=conflict_columns)
-    session.execute(stmt)
+    # Postgres caps a single statement at 65535 bind parameters. A single
+    # multi-row VALUES clause for the full real dataset (e.g. orders: 99k
+    # rows x 8 columns) exceeds that by an order of magnitude, so batch
+    # into chunks small enough to stay well under the limit regardless of
+    # how many columns a given table has.
+    batch_size = 5000
+    for i in range(0, len(rows), batch_size):
+        batch = rows[i : i + batch_size]
+        stmt = pg_insert(model).values(batch)
+        stmt = stmt.on_conflict_do_nothing(index_elements=conflict_columns)
+        session.execute(stmt)
 
 
 def load_customers(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
@@ -57,7 +65,7 @@ def load_customers(session: Session, csv_path: Path) -> LoadResult:
 
 def load_orders(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
@@ -86,7 +94,7 @@ def load_orders(session: Session, csv_path: Path) -> LoadResult:
 
 def load_category_translations(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
@@ -103,7 +111,7 @@ def load_category_translations(session: Session, csv_path: Path) -> LoadResult:
 
 def load_sellers(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
@@ -120,7 +128,7 @@ def load_sellers(session: Session, csv_path: Path) -> LoadResult:
 
 def load_products(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
@@ -139,7 +147,7 @@ def load_products(session: Session, csv_path: Path) -> LoadResult:
 
 def load_order_items(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
@@ -159,7 +167,7 @@ def load_order_items(session: Session, csv_path: Path) -> LoadResult:
 
 def load_payments(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
@@ -177,7 +185,7 @@ def load_payments(session: Session, csv_path: Path) -> LoadResult:
 
 def load_reviews(session: Session, csv_path: Path) -> LoadResult:
     rows: list[dict] = []
-    with csv_path.open(newline="", encoding="utf-8") as f:
+    with csv_path.open(newline="", encoding="utf-8-sig") as f:
         for record in csv.DictReader(f):
             rows.append(
                 {
