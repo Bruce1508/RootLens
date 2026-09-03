@@ -7,7 +7,9 @@ from app.core.config import Settings
 
 _settings = Settings()
 
-# Owner/write engine — Alembic migrations and the ingestion CLI only.
+# Owner/write engine — Alembic migrations, the ingestion CLI, and (since
+# Milestone 3) the investigations API for creating/updating investigation
+# state, events, and hypotheses.
 write_engine: Engine = create_engine(_settings.database_url)
 WriteSessionLocal = sessionmaker(bind=write_engine, autoflush=False, expire_on_commit=False)
 
