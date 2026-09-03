@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 from app.analytics.calculate_contribution import calculate_contribution
 from app.analytics.compare_periods import compare_periods
 from app.analytics.schemas import DateRange, ToolResult
+from app.investigations.report import generate_report
+from app.investigations.report_schemas import InvestigationReport
 from app.llm.provider import LLMProvider
 from app.llm.schemas import DecompositionPlan
-from app.models import Hypothesis, Investigation, InvestigationEvent
+from app.models import Evidence, Hypothesis, Investigation, InvestigationEvent, Report
 from app.prompts.catalog import get_prompt_definition
 
 _MAX_STEPS = 12
@@ -48,10 +50,12 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
         )
         _advance(investigation, started_at, is_query=True)
         _record_event(session, investigation, "tool_call", revenue_result.model_dump())
+        _record_evidence(session, investigation, revenue_result)
 
         orders_result = compare_periods(session, _ORDERS_METRIC, current_period, comparison_period)
         _advance(investigation, started_at, is_query=True)
         _record_event(session, investigation, "tool_call", orders_result.model_dump())
+        _record_evidence(session, investigation, orders_result)
         session.commit()
 
         plan = _decompose(llm, investigation.metric, revenue_result, orders_result)
@@ -82,9 +86,22 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
         )
         _advance(investigation, started_at, is_query=True)
         _record_event(session, investigation, "tool_call", contribution_result.model_dump())
+        _record_evidence(session, investigation, contribution_result)
 
         _resolve_hypothesis(hypothesis, contribution_result)
         _record_event(session, investigation, "hypothesis_update", _hypothesis_payload(hypothesis))
+        session.commit()
+
+        report = generate_report(
+            llm, investigation, hypothesis, revenue_result, orders_result, contribution_result
+        )
+        _record_report(session, investigation, report)
+        _record_event(
+            session,
+            investigation,
+            "report_generated",
+            {"status": report.status, "headline": report.headline},
+        )
 
         investigation.status = "completed"
     except _StoppingConditionExceeded as exc:
@@ -123,6 +140,39 @@ def _record_event(
             investigation_id=investigation.investigation_id,
             event_type=event_type,
             payload=payload,
+        )
+    )
+
+
+def _record_evidence(session: Session, investigation: Investigation, result: ToolResult) -> None:
+    session.add(
+        Evidence(
+            evidence_id=result.evidence_id,
+            investigation_id=investigation.investigation_id,
+            tool_name=result.tool_name,
+            params=result.params,
+            sql=result.sql,
+            columns=result.columns,
+            rows=result.rows,
+            row_count=result.row_count,
+            execution_ms=result.execution_ms,
+            warnings=result.warnings,
+        )
+    )
+
+
+def _record_report(
+    session: Session, investigation: Investigation, report: InvestigationReport
+) -> None:
+    session.add(
+        Report(
+            investigation_id=investigation.investigation_id,
+            status=report.status,
+            headline=report.headline,
+            observed_change=report.observed_change.model_dump(),
+            findings=[finding.model_dump() for finding in report.findings],
+            limitations=report.limitations,
+            recommended_next_checks=report.recommended_next_checks,
         )
     )
 
