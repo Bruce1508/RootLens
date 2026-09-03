@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from app.analytics.schemas import DateRange
+from app.investigations.report_schemas import InvestigationReport
 
 InvestigationStatus = Literal["running", "completed", "partial", "failed", "timed_out", "cancelled"]
 HypothesisStatus = Literal["untested", "testing", "supported", "rejected", "inconclusive"]
@@ -38,10 +39,24 @@ class InvestigationView(BaseModel):
     query_count: int
     created_at: datetime
     updated_at: datetime
+    report: InvestigationReport | None = None
 
 
 class InvestigationEventView(BaseModel):
     id: int
     event_type: str
     payload: dict
+    created_at: datetime
+
+
+class EvidenceView(BaseModel):
+    evidence_id: str
+    tool_name: str
+    params: dict
+    sql: str
+    columns: list[str]
+    rows: list[dict]
+    row_count: int
+    execution_ms: float
+    warnings: list[str]
     created_at: datetime
