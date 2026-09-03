@@ -1,5 +1,11 @@
 from app.models.category_translations import ProductCategoryTranslation
 from app.models.customers import Customer
+from app.models.evaluation import (
+    EvalGroundTruth,
+    EvalScenario,
+    EvaluationCaseResult,
+    EvaluationRun,
+)
 from app.models.evidence import Evidence
 from app.models.hypotheses import Hypothesis
 from app.models.investigation_events import InvestigationEvent
@@ -14,6 +20,10 @@ from app.models.sellers import Seller
 
 __all__ = [
     "Customer",
+    "EvalGroundTruth",
+    "EvalScenario",
+    "EvaluationCaseResult",
+    "EvaluationRun",
     "Evidence",
     "Hypothesis",
     "Investigation",

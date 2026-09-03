@@ -30,7 +30,14 @@ A small, hand-authored subset of Olist-shaped CSVs plus
 test suite so CI never depends on the full licensed dataset. Loaded via
 `make ingest-fixtures`.
 
-## `scenarios/` — incident benchmark scenarios (Milestone 5, not yet used)
+## `scenarios/` — unused (Milestone 5)
 
-Empty placeholder. Populated when the incident-injection and evaluation
-runner work (Milestone 5) begins.
+Left as an empty placeholder by design: the 35 incident-benchmark scenarios
+(`apps/api/app/evaluation/scenarios.py`) are version-controlled in code, the
+same pattern already used for the metric catalog (ADR-0005) and prompt
+registry (ADR-0006), rather than as files here. Their hidden ground truth
+lives in the `eval` Postgres schema (ADR-0007), seeded via `make eval-seed`.
+
+Run the benchmark with `make eval` (`eval-seed` + `eval-run`) once
+`data/raw` is ingested — the scenarios are grounded in the real dataset's
+volume, not the small `fixtures/` slice above.
