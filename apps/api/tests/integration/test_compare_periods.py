@@ -53,3 +53,19 @@ def test_compare_periods_orders_matches_fixture(loaded_db: Session) -> None:
     expected = _EXPECTED["orders"]
     assert int(result.rows[0]["current_value"]) == expected["current"]
     assert int(result.rows[0]["comparison_value"]) == expected["comparison"]
+
+
+def test_compare_periods_cancellation_rate_matches_fixture(loaded_db: Session) -> None:
+    from app.analytics.compare_periods import compare_periods
+    from app.analytics.schemas import DateRange
+
+    current = DateRange(start=date(2018, 1, 1), end=date(2018, 1, 31))
+    comparison = DateRange(start=date(2017, 12, 1), end=date(2017, 12, 31))
+
+    result = compare_periods(loaded_db, "cancellation_rate", current, comparison)
+
+    expected = _EXPECTED["cancellation_rate"]
+    assert float(result.rows[0]["current_value"]) == pytest.approx(expected["current"])
+    assert float(result.rows[0]["comparison_value"]) == pytest.approx(expected["comparison"])
+    assert float(result.rows[0]["absolute_change"]) == pytest.approx(expected["absolute_change_pp"])
+    assert result.row_count == 1

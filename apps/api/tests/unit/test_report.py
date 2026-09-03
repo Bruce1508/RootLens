@@ -233,6 +233,11 @@ def test_generate_report_regenerates_once_when_first_narrative_has_unknown_citat
     orders_result = _tool_result(
         "ev-orders", "compare_periods", [{"current_value": 14.0, "comparison_value": 20.0}]
     )
+    cancellation_result = _tool_result(
+        "ev-cancellation",
+        "compare_periods",
+        [{"current_value": 0.02, "comparison_value": 0.02}],
+    )
     contribution_result = _tool_result(
         "ev-contribution",
         "calculate_contribution",
@@ -275,6 +280,7 @@ def test_generate_report_regenerates_once_when_first_narrative_has_unknown_citat
         _hypothesis("supported"),
         revenue_result,
         orders_result,
+        cancellation_result,
         contribution_result,
     )
 

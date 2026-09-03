@@ -10,6 +10,7 @@ from app.metrics.catalog import get_metric_definition
 
 _REVENUE_METRIC = "product_revenue"
 _ORDERS_METRIC = "orders"
+_CANCELLATION_RATE_METRIC = "cancellation_rate"
 
 
 def _period_value(session: Session, metric: str, period: DateRange) -> float:
@@ -36,6 +37,24 @@ def _period_value(session: Session, metric: str, period: DateRange) -> float:
             Order.order_status.notin_(excluded_statuses),
         )
         return float(session.execute(orders_stmt).scalar_one())
+
+    if metric == _CANCELLATION_RATE_METRIC:
+        # Unlike product_revenue/orders, the denominator here is *all* orders
+        # in the period — cancelled/unavailable orders are exactly what's
+        # being measured, not excluded from it.
+        cancellation_stmt = select(
+            func.count(func.distinct(Order.order_id)).filter(
+                Order.order_status.in_(excluded_statuses)
+            ),
+            func.count(func.distinct(Order.order_id)),
+        ).where(
+            Order.order_purchase_timestamp >= period.start,
+            Order.order_purchase_timestamp < exclusive_end(period),
+        )
+        cancelled_count, total_count = session.execute(cancellation_stmt).one()
+        if not total_count:
+            return 0.0
+        return float(cancelled_count) / float(total_count)
 
     raise NotImplementedError(f"compare_periods does not support metric {metric!r} yet")
 

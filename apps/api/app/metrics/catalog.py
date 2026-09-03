@@ -1,8 +1,10 @@
+from app.metrics.definitions.cancellation_rate_v1 import CANCELLATION_RATE_V1
 from app.metrics.definitions.product_revenue_v1 import PRODUCT_REVENUE_V1
 from app.metrics.schemas import MetricDefinition
 
 _CATALOG: dict[str, MetricDefinition] = {
     PRODUCT_REVENUE_V1.name: PRODUCT_REVENUE_V1,
+    CANCELLATION_RATE_V1.name: CANCELLATION_RATE_V1,
 }
 
 

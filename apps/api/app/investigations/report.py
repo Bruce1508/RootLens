@@ -41,6 +41,7 @@ def generate_report(
     hypothesis: Hypothesis,
     revenue_result: ToolResult,
     orders_result: ToolResult,
+    cancellation_result: ToolResult,
     contribution_result: ToolResult,
 ) -> InvestigationReport:
     observed_change = build_observed_change(investigation.metric, revenue_result)
@@ -49,11 +50,13 @@ def generate_report(
     allowed_evidence_ids = {
         revenue_result.evidence_id,
         orders_result.evidence_id,
+        cancellation_result.evidence_id,
         contribution_result.evidence_id,
     }
     evidence_by_id = {
         revenue_result.evidence_id: revenue_result,
         orders_result.evidence_id: orders_result,
+        cancellation_result.evidence_id: cancellation_result,
         contribution_result.evidence_id: contribution_result,
     }
 

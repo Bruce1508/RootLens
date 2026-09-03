@@ -97,6 +97,17 @@ _ORDERS_RESULT = _tool_result(
         }
     ],
 )
+_CANCELLATION_RESULT = _tool_result(
+    "compare_periods",
+    [
+        {
+            "current_value": 0.02,
+            "comparison_value": 0.02,
+            "absolute_change": 0.0,
+            "percent_change": 0.0,
+        }
+    ],
+)
 _PLAN = DecompositionPlan(
     metric="product_revenue",
     primary_driver_hypothesis="order_volume",
@@ -117,7 +128,11 @@ def test_run_investigation_completes_and_supports_hypothesis_on_concentrated_con
     narrative = _narrative_citing(_REVENUE_RESULT.evidence_id, contribution_result.evidence_id)
 
     with (
-        patch.object(engine, "compare_periods", side_effect=[_REVENUE_RESULT, _ORDERS_RESULT]),
+        patch.object(
+            engine,
+            "compare_periods",
+            side_effect=[_REVENUE_RESULT, _ORDERS_RESULT, _CANCELLATION_RESULT],
+        ),
         patch.object(engine, "calculate_contribution", return_value=contribution_result),
     ):
         engine.run_investigation(
@@ -126,8 +141,8 @@ def test_run_investigation_completes_and_supports_hypothesis_on_concentrated_con
 
     db_session.refresh(investigation)
     assert investigation.status == "completed"
-    assert investigation.step_count == 4
-    assert investigation.query_count == 3
+    assert investigation.step_count == 5
+    assert investigation.query_count == 4
 
     hypothesis = db_session.execute(
         select(Hypothesis).where(Hypothesis.investigation_id == investigation.investigation_id)
@@ -146,7 +161,7 @@ def test_run_investigation_completes_and_supports_hypothesis_on_concentrated_con
         .all()
     )
     tool_call_events = [e for e in events if e.event_type == "tool_call"]
-    assert len(tool_call_events) == 3
+    assert len(tool_call_events) == 4
 
     report = db_session.execute(
         select(Report).where(Report.investigation_id == investigation.investigation_id)
@@ -170,7 +185,11 @@ def test_run_investigation_marks_hypothesis_inconclusive_when_contribution_not_c
     narrative = _narrative_citing(_REVENUE_RESULT.evidence_id, contribution_result.evidence_id)
 
     with (
-        patch.object(engine, "compare_periods", side_effect=[_REVENUE_RESULT, _ORDERS_RESULT]),
+        patch.object(
+            engine,
+            "compare_periods",
+            side_effect=[_REVENUE_RESULT, _ORDERS_RESULT, _CANCELLATION_RESULT],
+        ),
         patch.object(engine, "calculate_contribution", return_value=contribution_result),
     ):
         engine.run_investigation(

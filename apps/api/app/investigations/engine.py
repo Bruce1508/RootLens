@@ -17,6 +17,7 @@ _MAX_STEPS = 12
 _MAX_QUERIES = 15
 _WALL_CLOCK_TIMEOUT_SECONDS = 120.0
 _ORDERS_METRIC = "orders"
+_CANCELLATION_RATE_METRIC = "cancellation_rate"
 
 # §7's example report cites a segment "contributing 61% of the lost
 # revenue" as strong enough to call a driver supported; below this share
@@ -58,8 +59,23 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
         _record_evidence(session, investigation, orders_result)
         session.commit()
 
-        plan = _decompose(llm, investigation.metric, revenue_result, orders_result)
+        cancellation_result = compare_periods(
+            session, _CANCELLATION_RATE_METRIC, current_period, comparison_period
+        )
+        _advance(investigation, started_at, is_query=True)
+        _record_event(session, investigation, "tool_call", cancellation_result.model_dump())
+        _record_evidence(session, investigation, cancellation_result)
+        session.commit()
+
+        plan = _decompose(
+            llm, investigation.metric, revenue_result, orders_result, cancellation_result
+        )
         _advance(investigation, started_at, is_query=False)
+        # Recorded as its own structured event — the hypothesis statement
+        # below only embeds these as free text, which the evaluation
+        # runner's scoring (FR-14 root-cause / dimension accuracy) can't
+        # reliably parse back out.
+        _record_event(session, investigation, "decomposition_plan", plan.model_dump())
 
         hypothesis = Hypothesis(
             id=str(uuid.uuid4()),
@@ -93,7 +109,13 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
         session.commit()
 
         report = generate_report(
-            llm, investigation, hypothesis, revenue_result, orders_result, contribution_result
+            llm,
+            investigation,
+            hypothesis,
+            revenue_result,
+            orders_result,
+            cancellation_result,
+            contribution_result,
         )
         _record_report(session, investigation, report)
         _record_event(
@@ -178,10 +200,15 @@ def _record_report(
 
 
 def _decompose(
-    llm: LLMProvider, metric: str, revenue_result: ToolResult, orders_result: ToolResult
+    llm: LLMProvider,
+    metric: str,
+    revenue_result: ToolResult,
+    orders_result: ToolResult,
+    cancellation_result: ToolResult,
 ) -> DecompositionPlan:
     revenue_row = revenue_result.rows[0]
     orders_row = orders_result.rows[0]
+    cancellation_row = cancellation_result.rows[0]
     prompt = get_prompt_definition("decomposition_planner").template.format(
         metric=metric,
         comparison_value=revenue_row["comparison_value"],
@@ -190,6 +217,9 @@ def _decompose(
         orders_comparison_value=orders_row["comparison_value"],
         orders_current_value=orders_row["current_value"],
         orders_percent_change=_format_percent(orders_row["percent_change"]),
+        cancellation_comparison_value=cancellation_row["comparison_value"],
+        cancellation_current_value=cancellation_row["current_value"],
+        cancellation_percent_change=_format_percent(cancellation_row["percent_change"]),
     )
     return llm.generate_structured(prompt, DecompositionPlan)
 

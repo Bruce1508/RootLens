@@ -11,6 +11,7 @@ from app.models import Customer, Order, OrderItem, Product
 DIMENSIONS: dict[str, str] = {
     "customer_state": "Customer state",
     "product_category": "Product category (English name not resolved here; raw category slug)",
+    "seller": "Seller ID",
 }
 
 
@@ -23,6 +24,8 @@ def dimension_column(dimension: str) -> InstrumentedAttribute[Any]:
         return Customer.customer_state
     if dimension == "product_category":
         return Product.product_category_name
+    if dimension == "seller":
+        return OrderItem.seller_id
     raise NotImplementedError(f"unsupported dimension: {dimension!r}")
 
 
@@ -31,4 +34,9 @@ def apply_dimension_joins(stmt: Select, dimension: str) -> Select:
         return stmt.join(Customer, Customer.customer_id == Order.customer_id)
     if dimension == "product_category":
         return stmt.join(Product, Product.product_id == OrderItem.product_id)
+    if dimension == "seller":
+        # OrderItem.seller_id is already in scope for every caller
+        # (segment_metric selects from OrderItem joined to Order) — no
+        # extra join needed.
+        return stmt
     raise NotImplementedError(f"unsupported dimension: {dimension!r}")
