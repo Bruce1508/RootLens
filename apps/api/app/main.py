@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, investigations, metadata, metrics
+from app.api.routes import evaluations, health, investigations, metadata, metrics
 from app.core.config import Settings
 
 settings = Settings()
@@ -15,6 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(evaluations.router)
 app.include_router(health.router)
 app.include_router(investigations.router)
 app.include_router(metadata.router)
