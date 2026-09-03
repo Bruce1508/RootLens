@@ -24,3 +24,5 @@ class Settings(BaseSettings):
     cors_origins: Annotated[list[str], NoDecode, BeforeValidator(_split_csv)] = [
         "http://localhost:3000"
     ]
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen3:8b"

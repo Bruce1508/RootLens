@@ -29,6 +29,8 @@ services:
       DATABASE_URL_READONLY: postgresql+psycopg://rootlens_readonly:${ROOTLENS_READONLY_PASSWORD}@postgres:5432/${POSTGRES_DB}
       ENVIRONMENT: ${ENVIRONMENT}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
     ports:
       - "8000:8000"
     depends_on:
@@ -37,6 +39,8 @@ services:
     volumes:
       - ./apps/api:/app
       - ./data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   web:
     build:
