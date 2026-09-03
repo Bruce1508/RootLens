@@ -1,5 +1,6 @@
 .PHONY: setup up down migrate ingest ingest-fixtures db-reset \
-        test test-backend test-frontend lint format typecheck
+        test test-backend test-frontend lint format typecheck \
+        eval-seed eval-run eval
 
 setup:
 	cp -n .env.example .env || true
@@ -23,6 +24,14 @@ ingest-fixtures:
 
 db-reset:
 	cd apps/api && uv run python -m app.ingestion.cli import --source ../../data/fixtures --reset
+
+eval-seed:
+	cd apps/api && uv run python -m app.evaluation.seed
+
+eval-run:
+	cd apps/api && uv run python -m app.evaluation.cli run --split held_out
+
+eval: eval-seed eval-run
 
 test: test-backend test-frontend
 

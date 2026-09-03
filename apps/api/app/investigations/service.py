@@ -13,9 +13,12 @@ from app.metrics.catalog import get_metric_definition
 from app.models import Investigation
 
 
-def create_investigation(
-    session: Session, background_tasks: BackgroundTasks, request: InvestigationCreateRequest
-) -> Investigation:
+def build_investigation(session: Session, request: InvestigationCreateRequest) -> Investigation:
+    """The synchronous validate-and-create half of create_investigation,
+    split out so app.evaluation.runner can create a benchmark scenario's
+    investigation row without going through BackgroundTasks/the global
+    WriteSessionLocal — it needs the scenario-scoped session from
+    app.evaluation.scenario_schema.scenario_session instead."""
     validate_non_overlapping(request.current_period, request.comparison_period)
     metric_definition = get_metric_definition(request.metric)  # KeyError if unsupported
 
@@ -33,9 +36,14 @@ def create_investigation(
     session.add(investigation)
     session.commit()
     session.refresh(investigation)
+    return investigation
 
+
+def create_investigation(
+    session: Session, background_tasks: BackgroundTasks, request: InvestigationCreateRequest
+) -> Investigation:
+    investigation = build_investigation(session, request)
     background_tasks.add_task(_run_in_background, investigation.investigation_id)
-
     return investigation
 
 

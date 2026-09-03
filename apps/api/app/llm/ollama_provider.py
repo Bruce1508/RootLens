@@ -4,10 +4,20 @@ from pydantic import ValidationError
 
 from app.llm.provider import T
 
+_DEFAULT_TIMEOUT_SECONDS = 120.0
+
 
 class OllamaProvider:
-    def __init__(self, base_url: str, default_model: str) -> None:
-        self._client = Client(host=base_url)
+    def __init__(
+        self, base_url: str, default_model: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS
+    ) -> None:
+        # Discovered while smoke-testing the Milestone 5 evaluation runner:
+        # the ollama client's default httpx timeout is None (unbounded), so
+        # a stalled generation could hang a scenario — and the whole
+        # benchmark run behind it — forever. Bounded to the same order as
+        # the investigation loop's own wall-clock budget (engine.py's
+        # _WALL_CLOCK_TIMEOUT_SECONDS).
+        self._client = Client(host=base_url, timeout=timeout_seconds)
         self._default_model = default_model
 
     def generate_structured(self, prompt: str, schema: type[T], model: str | None = None) -> T:

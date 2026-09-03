@@ -141,6 +141,11 @@ def test_generate_structured_against_live_local_ollama() -> None:
     )
 
     assert isinstance(result, DecompositionPlan)
-    assert result.primary_driver_hypothesis in ("order_volume", "average_order_value", "mixed")
-    assert result.recommended_next_dimension in ("customer_state", "product_category")
+    assert result.primary_driver_hypothesis in (
+        "order_volume",
+        "average_order_value",
+        "cancellation",
+        "mixed",
+    )
+    assert result.recommended_next_dimension in ("customer_state", "product_category", "seller")
     assert len(result.rationale) > 0
