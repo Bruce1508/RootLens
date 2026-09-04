@@ -1,0 +1,23 @@
+<svg width="112" height="112" viewBox="0 0 112 112" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RootLens logo">
+  <defs>
+    <linearGradient id="rl-ring" x1="8" y1="8" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#818CF8"/>
+    </linearGradient>
+    <linearGradient id="rl-trend" x1="24" y1="66" x2="70" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FB7185"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+  </defs>
+
+  <!-- magnifying-glass handle -->
+  <line x1="76" y1="76" x2="102" y2="102" stroke="url(#rl-ring)" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- lens -->
+  <circle cx="46" cy="46" r="34" stroke="url(#rl-ring)" stroke-width="8"/>
+  <circle cx="46" cy="46" r="30" fill="#0B1220"/>
+
+  <!-- root-cause trend: a dip followed by the investigated recovery -->
+  <polyline points="24,58 36,50 46,64 58,34 68,40" fill="none" stroke="url(#rl-trend)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="64" r="4" fill="#FB7185"/>
+</svg>
