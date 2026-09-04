@@ -17,6 +17,8 @@ apps/web/node_modules/
 apps/web/.next/
 apps/web/out/
 apps/web/coverage/
+apps/web/test-results/
+apps/web/playwright-report/
 
 # Data (never commit raw or licensed dataset files)
 data/raw/*
