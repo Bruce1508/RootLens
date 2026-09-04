@@ -1,3 +1,4 @@
+from app.prompts.definitions.ad_hoc_query_decision_v1 import AD_HOC_QUERY_DECISION_V1
 from app.prompts.definitions.decomposition_planner_v2 import DECOMPOSITION_PLANNER_V2
 from app.prompts.definitions.report_generator_v1 import REPORT_GENERATOR_V1
 from app.prompts.schemas import PromptDefinition
@@ -5,6 +6,7 @@ from app.prompts.schemas import PromptDefinition
 _CATALOG: dict[str, PromptDefinition] = {
     DECOMPOSITION_PLANNER_V2.name: DECOMPOSITION_PLANNER_V2,
     REPORT_GENERATOR_V1.name: REPORT_GENERATOR_V1,
+    AD_HOC_QUERY_DECISION_V1.name: AD_HOC_QUERY_DECISION_V1,
 }
 
 

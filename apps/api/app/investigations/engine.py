@@ -1,20 +1,24 @@
 import time
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.analytics.calculate_contribution import calculate_contribution
 from app.analytics.compare_periods import compare_periods
+from app.analytics.run_safe_sql import run_safe_sql
 from app.analytics.schemas import DateRange, ToolResult
+from app.analytics.sql_guardrails import UnsafeSqlError
 from app.investigations.report import generate_report
 from app.investigations.report_schemas import InvestigationReport
 from app.llm.provider import LLMProvider
-from app.llm.schemas import DecompositionPlan
+from app.llm.schemas import AdHocQueryDecision, DecompositionPlan
 from app.models import Evidence, Hypothesis, Investigation, InvestigationEvent, Report
 from app.prompts.catalog import get_prompt_definition
 
 _MAX_STEPS = 12
 _MAX_QUERIES = 15
+_MAX_SQL_CORRECTION_ATTEMPTS = 2  # FR-8: "no more than two correction attempts"
 _WALL_CLOCK_TIMEOUT_SECONDS = 120.0
 _ORDERS_METRIC = "orders"
 _CANCELLATION_RATE_METRIC = "cancellation_rate"
@@ -32,8 +36,18 @@ class _StoppingConditionExceeded(Exception):
         self.terminal_status = terminal_status
 
 
-def run_investigation(session: Session, llm: LLMProvider, investigation_id: str) -> None:
-    investigation = session.get(Investigation, investigation_id)
+def run_investigation(
+    write_session: Session, readonly_session: Session, llm: LLMProvider, investigation_id: str
+) -> None:
+    """Milestone 6 split: state (Investigation/Evidence/Hypothesis/Report/
+    InvestigationEvent) is only ever written through `write_session`
+    (rootlens_app); every analytics query — including the ad hoc
+    run_safe_sql step below — runs through `readonly_session`
+    (rootlens_readonly), closing the gap ADR-0004/ADR-0007 both flagged.
+    A ToolResult is plain in-memory data, so recording one produced by
+    the readonly session as Evidence via the write session needs no
+    special handling."""
+    investigation = write_session.get(Investigation, investigation_id)
     if investigation is None:
         raise ValueError(f"unknown investigation_id: {investigation_id!r}")
 
@@ -47,35 +61,37 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
 
     try:
         revenue_result = compare_periods(
-            session, investigation.metric, current_period, comparison_period
+            readonly_session, investigation.metric, current_period, comparison_period
         )
-        _advance(investigation, started_at, is_query=True)
-        _record_event(session, investigation, "tool_call", revenue_result.model_dump())
-        _record_evidence(session, investigation, revenue_result)
+        _advance(write_session, investigation, started_at, is_query=True)
+        _record_event(write_session, investigation, "tool_call", revenue_result.model_dump())
+        _record_evidence(write_session, investigation, revenue_result)
 
-        orders_result = compare_periods(session, _ORDERS_METRIC, current_period, comparison_period)
-        _advance(investigation, started_at, is_query=True)
-        _record_event(session, investigation, "tool_call", orders_result.model_dump())
-        _record_evidence(session, investigation, orders_result)
-        session.commit()
+        orders_result = compare_periods(
+            readonly_session, _ORDERS_METRIC, current_period, comparison_period
+        )
+        _advance(write_session, investigation, started_at, is_query=True)
+        _record_event(write_session, investigation, "tool_call", orders_result.model_dump())
+        _record_evidence(write_session, investigation, orders_result)
+        write_session.commit()
 
         cancellation_result = compare_periods(
-            session, _CANCELLATION_RATE_METRIC, current_period, comparison_period
+            readonly_session, _CANCELLATION_RATE_METRIC, current_period, comparison_period
         )
-        _advance(investigation, started_at, is_query=True)
-        _record_event(session, investigation, "tool_call", cancellation_result.model_dump())
-        _record_evidence(session, investigation, cancellation_result)
-        session.commit()
+        _advance(write_session, investigation, started_at, is_query=True)
+        _record_event(write_session, investigation, "tool_call", cancellation_result.model_dump())
+        _record_evidence(write_session, investigation, cancellation_result)
+        write_session.commit()
 
         plan = _decompose(
             llm, investigation.metric, revenue_result, orders_result, cancellation_result
         )
-        _advance(investigation, started_at, is_query=False)
+        _advance(write_session, investigation, started_at, is_query=False)
         # Recorded as its own structured event — the hypothesis statement
         # below only embeds these as free text, which the evaluation
         # runner's scoring (FR-14 root-cause / dimension accuracy) can't
         # reliably parse back out.
-        _record_event(session, investigation, "decomposition_plan", plan.model_dump())
+        _record_event(write_session, investigation, "decomposition_plan", plan.model_dump())
 
         hypothesis = Hypothesis(
             id=str(uuid.uuid4()),
@@ -89,24 +105,34 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
             supporting_evidence_ids=[],
             contradicting_evidence_ids=[],
         )
-        session.add(hypothesis)
-        _record_event(session, investigation, "hypothesis_update", _hypothesis_payload(hypothesis))
-        session.commit()
+        write_session.add(hypothesis)
+        _record_event(
+            write_session, investigation, "hypothesis_update", _hypothesis_payload(hypothesis)
+        )
+        write_session.commit()
 
         contribution_result = calculate_contribution(
-            session,
+            readonly_session,
             investigation.metric,
             plan.recommended_next_dimension,
             current_period,
             comparison_period,
         )
-        _advance(investigation, started_at, is_query=True)
-        _record_event(session, investigation, "tool_call", contribution_result.model_dump())
-        _record_evidence(session, investigation, contribution_result)
+        _advance(write_session, investigation, started_at, is_query=True)
+        _record_event(write_session, investigation, "tool_call", contribution_result.model_dump())
+        _record_evidence(write_session, investigation, contribution_result)
 
         _resolve_hypothesis(hypothesis, contribution_result)
-        _record_event(session, investigation, "hypothesis_update", _hypothesis_payload(hypothesis))
-        session.commit()
+        _record_event(
+            write_session, investigation, "hypothesis_update", _hypothesis_payload(hypothesis)
+        )
+        write_session.commit()
+
+        ad_hoc_result: ToolResult | None = None
+        if hypothesis.status == "inconclusive":
+            ad_hoc_result = _maybe_run_ad_hoc_query(
+                write_session, readonly_session, llm, investigation, hypothesis, started_at
+            )
 
         report = generate_report(
             llm,
@@ -116,10 +142,11 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
             orders_result,
             cancellation_result,
             contribution_result,
+            ad_hoc_result,
         )
-        _record_report(session, investigation, report)
+        _record_report(write_session, investigation, report)
         _record_event(
-            session,
+            write_session,
             investigation,
             "report_generated",
             {"status": report.status, "headline": report.headline},
@@ -128,20 +155,36 @@ def run_investigation(session: Session, llm: LLMProvider, investigation_id: str)
         investigation.status = "completed"
     except _StoppingConditionExceeded as exc:
         investigation.status = exc.terminal_status
-        _record_event(session, investigation, "status_change", {"reason": str(exc)})
+        _record_event(write_session, investigation, "status_change", {"reason": str(exc)})
     except Exception as exc:
         investigation.status = "failed"
-        _record_event(session, investigation, "status_change", {"error": str(exc)})
-        session.commit()
+        _record_event(write_session, investigation, "status_change", {"error": str(exc)})
+        write_session.commit()
         raise
 
-    session.commit()
+    write_session.commit()
 
 
-def _advance(investigation: Investigation, started_at: float, *, is_query: bool) -> None:
+def _advance(
+    write_session: Session, investigation: Investigation, started_at: float, *, is_query: bool
+) -> None:
     investigation.step_count += 1
     if is_query:
         investigation.query_count += 1
+
+    # A plain scalar SELECT rather than session.refresh(investigation) —
+    # refresh() would reload every column from the DB and clobber the
+    # step_count/query_count increments just made above, which aren't
+    # committed yet at every call site. Postgres's read-committed
+    # isolation means this still sees a concurrent POST /cancel's commit
+    # even mid-transaction — each new statement gets a fresh snapshot.
+    cancel_requested = write_session.execute(
+        select(Investigation.cancel_requested).where(
+            Investigation.investigation_id == investigation.investigation_id
+        )
+    ).scalar_one()
+    if cancel_requested:
+        raise _StoppingConditionExceeded("cancelled", "cancellation requested by user")
 
     elapsed = time.monotonic() - started_at
     if elapsed > _WALL_CLOCK_TIMEOUT_SECONDS:
@@ -255,3 +298,67 @@ def _resolve_hypothesis(hypothesis: Hypothesis, contribution_result: ToolResult)
     else:
         hypothesis.status = "inconclusive"
         hypothesis.confidence = "low"
+
+
+def _maybe_run_ad_hoc_query(
+    write_session: Session,
+    readonly_session: Session,
+    llm: LLMProvider,
+    investigation: Investigation,
+    hypothesis: Hypothesis,
+    started_at: float,
+) -> ToolResult | None:
+    """Milestone 6: one bounded opportunity for the LLM to request a
+    guarded ad hoc SQL query (FR-7's run_safe_sql) when the standard
+    typed tools left the hypothesis inconclusive. Never mechanically
+    upgrades the hypothesis's numeric status from this unstructured
+    result — that stays deterministic (PRD §6 principle 4); the report
+    generator's narrative can reference it as supporting context."""
+    prompt = get_prompt_definition("ad_hoc_query_decision").template.format(
+        metric=investigation.metric,
+        hypothesis_statement=hypothesis.statement,
+        current_period_start=investigation.current_period_start,
+        current_period_end=investigation.current_period_end,
+        comparison_period_start=investigation.comparison_period_start,
+        comparison_period_end=investigation.comparison_period_end,
+    )
+    decision = llm.generate_structured(prompt, AdHocQueryDecision)
+    _advance(write_session, investigation, started_at, is_query=False)
+    _record_event(write_session, investigation, "ad_hoc_query_decision", decision.model_dump())
+
+    if not decision.should_query or not decision.query:
+        return None
+
+    query = decision.query
+    purpose = decision.purpose or "clarify an inconclusive hypothesis"
+    for attempt in range(_MAX_SQL_CORRECTION_ATTEMPTS):
+        try:
+            result = run_safe_sql(readonly_session, query, purpose)
+        except UnsafeSqlError as exc:
+            _advance(write_session, investigation, started_at, is_query=True)
+            _record_event(
+                write_session,
+                investigation,
+                "ad_hoc_query_rejected",
+                {"query": query, "reason": str(exc), "attempt": attempt + 1},
+            )
+            if attempt + 1 >= _MAX_SQL_CORRECTION_ATTEMPTS:
+                return None
+            retry_prompt = (
+                f"{prompt}\n\nYour previous query was rejected: {exc}\n"
+                "Respond again with should_query=true and a corrected query, "
+                "or should_query=false if you can't correct it."
+            )
+            decision = llm.generate_structured(retry_prompt, AdHocQueryDecision)
+            if not decision.should_query or not decision.query:
+                return None
+            query = decision.query
+            continue
+
+        _advance(write_session, investigation, started_at, is_query=True)
+        _record_event(write_session, investigation, "tool_call", result.model_dump())
+        _record_evidence(write_session, investigation, result)
+        write_session.commit()
+        return result
+
+    return None

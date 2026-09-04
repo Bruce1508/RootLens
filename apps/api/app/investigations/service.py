@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.analytics.validation import validate_non_overlapping
 from app.core.config import Settings
-from app.db.session import WriteSessionLocal
+from app.db.session import ReadOnlySessionLocal, WriteSessionLocal
 from app.investigations.engine import run_investigation
 from app.investigations.schemas import InvestigationCreateRequest
 from app.llm.ollama_provider import OllamaProvider
@@ -18,7 +18,7 @@ def build_investigation(session: Session, request: InvestigationCreateRequest) -
     split out so app.evaluation.runner can create a benchmark scenario's
     investigation row without going through BackgroundTasks/the global
     WriteSessionLocal — it needs the scenario-scoped session from
-    app.evaluation.scenario_schema.scenario_session instead."""
+    app.evaluation.scenario_schema.scenario_sessions instead."""
     validate_non_overlapping(request.current_period, request.comparison_period)
     metric_definition = get_metric_definition(request.metric)  # KeyError if unsupported
 
@@ -50,11 +50,14 @@ def create_investigation(
 def _run_in_background(investigation_id: str) -> None:
     # Not FastAPI-Depends-scoped — BackgroundTasks run after the request's
     # own dependencies have already been torn down, so this opens its own
-    # write session for the loop's full duration.
+    # sessions for the loop's full duration: write for state, readonly
+    # for every analytics query (Milestone 6 role split, ADR-0004/0007).
     settings = Settings()
     llm = OllamaProvider(base_url=settings.ollama_base_url, default_model=settings.ollama_model)
-    session = WriteSessionLocal()
+    write_session = WriteSessionLocal()
+    readonly_session = ReadOnlySessionLocal()
     try:
-        run_investigation(session, llm, investigation_id)
+        run_investigation(write_session, readonly_session, llm, investigation_id)
     finally:
-        session.close()
+        write_session.close()
+        readonly_session.close()

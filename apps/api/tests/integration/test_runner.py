@@ -3,14 +3,19 @@ small, committed synthetic dataset (not the real Olist dataset, and not
 the real 35 app.evaluation.scenarios.SCENARIOS — those reference real
 months/states this synthetic setup doesn't have).
 
-Requires DATABASE_URL to point at rootlens_test for this process (see
-test_investigations_api.py's docstring for why) — app.db.session's
-WriteSessionLocal and app.evaluation.scenario_schema.scenario_session both
-create their own engines from app.core.config.Settings().database_url, so
-they only touch the test database when the test runner is invoked that
-way, e.g.:
-    DATABASE_URL="$TEST_DATABASE_URL" DATABASE_URL_READONLY="$TEST_DATABASE_URL" \\
-        uv run pytest tests/integration/test_runner.py
+Requires DATABASE_URL and DATABASE_URL_READONLY to both point at
+rootlens_test for this process (see test_investigations_api.py's
+docstring for why) — app.db.session's WriteSessionLocal/ReadOnlySessionLocal
+and app.evaluation.scenario_schema.scenario_sessions all create their own
+engines from app.core.config.Settings(), so they only touch the test
+database when the test runner is invoked that way. Milestone 6 actually
+uses the readonly role now (the engine's analytics reads run through it),
+so DATABASE_URL_READONLY must be real rootlens_readonly credentials
+against rootlens_test, not just a copy of TEST_DATABASE_URL:
+    export DATABASE_URL="$TEST_DATABASE_URL"
+    export DATABASE_URL_READONLY="postgresql+psycopg://rootlens_readonly:\
+${ROOTLENS_READONLY_PASSWORD}@localhost:5432/rootlens_test"
+    uv run pytest tests/integration/test_runner.py
 
 Everything this test writes is committed (multiple real connections are
 involved, so the usual rolled-back db_session fixture can't be used) and

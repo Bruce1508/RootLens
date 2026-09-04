@@ -20,7 +20,7 @@ from app.evaluation.incidents import apply_incident
 from app.evaluation.scenario_schema import (
     provision_scenario_schema,
     scenario_schema_name,
-    scenario_session,
+    scenario_sessions,
     teardown_scenario_schema,
 )
 from app.evaluation.scoring import (
@@ -128,10 +128,10 @@ def _run_one_scenario(
     investigation_id: str | None = None
     notes: str | None = None
 
-    with scenario_session(schema_name) as session:
+    with scenario_sessions(schema_name) as (write_session, readonly_session):
         if not scenario.is_unanswerable:
             apply_incident(
-                session,
+                write_session,
                 scenario.template,  # type: ignore[arg-type]
                 DateRange(start=scenario.current_period_start, end=scenario.current_period_end),
                 ground_truth.dimensions,
@@ -151,15 +151,15 @@ def _run_one_scenario(
                 ),
                 question=scenario.question,
             )
-            investigation = build_investigation(session, request)
+            investigation = build_investigation(write_session, request)
             investigation_id = investigation.investigation_id
-            run_investigation(session, llm, investigation_id)
+            run_investigation(write_session, readonly_session, llm, investigation_id)
         except Exception as exc:  # noqa: BLE001 — one bad scenario must not abort the run
             notes = f"investigation raised: {type(exc).__name__}: {exc}"
 
         latency_ms = (time.perf_counter() - started) * 1000
         case = _build_case_result(
-            session, scenario, ground_truth, investigation_id, latency_ms, notes
+            write_session, scenario, ground_truth, investigation_id, latency_ms, notes
         )
 
     teardown_session = WriteSessionLocal()

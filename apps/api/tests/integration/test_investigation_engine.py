@@ -1,3 +1,4 @@
+import time
 import uuid
 from datetime import date
 from unittest.mock import patch
@@ -9,11 +10,11 @@ from sqlalchemy.orm import Session
 from app.analytics.schemas import ToolResult
 from app.investigations import engine
 from app.investigations.report_schemas import ReportFinding, ReportNarrative
-from app.llm.schemas import DecompositionPlan
+from app.llm.schemas import AdHocQueryDecision, DecompositionPlan
 from app.models import Hypothesis, Investigation, InvestigationEvent, Report
 
 
-def _make_investigation(session: Session) -> Investigation:
+def _make_investigation(session: Session, **overrides: object) -> Investigation:
     investigation = Investigation(
         investigation_id=str(uuid.uuid4()),
         metric="product_revenue",
@@ -24,6 +25,7 @@ def _make_investigation(session: Session) -> Investigation:
         comparison_period_end=date(2017, 12, 31),
         question=None,
         status="running",
+        **overrides,
     )
     session.add(investigation)
     session.flush()
@@ -51,6 +53,8 @@ class _FakeLLM:
     def generate_structured(self, prompt: str, schema: type, model: str | None = None) -> object:
         if schema is DecompositionPlan:
             return self._plan
+        if schema is AdHocQueryDecision:
+            return AdHocQueryDecision(should_query=False)
         if schema is ReportNarrative and self._narrative is not None:
             return self._narrative
         raise AssertionError(f"unexpected generate_structured call for schema {schema}")
@@ -136,7 +140,7 @@ def test_run_investigation_completes_and_supports_hypothesis_on_concentrated_con
         patch.object(engine, "calculate_contribution", return_value=contribution_result),
     ):
         engine.run_investigation(
-            db_session, _FakeLLM(_PLAN, narrative), investigation.investigation_id
+            db_session, db_session, _FakeLLM(_PLAN, narrative), investigation.investigation_id
         )
 
     db_session.refresh(investigation)
@@ -193,7 +197,7 @@ def test_run_investigation_marks_hypothesis_inconclusive_when_contribution_not_c
         patch.object(engine, "calculate_contribution", return_value=contribution_result),
     ):
         engine.run_investigation(
-            db_session, _FakeLLM(_PLAN, narrative), investigation.investigation_id
+            db_session, db_session, _FakeLLM(_PLAN, narrative), investigation.investigation_id
         )
 
     db_session.refresh(investigation)
@@ -213,4 +217,77 @@ def test_run_investigation_marks_hypothesis_inconclusive_when_contribution_not_c
 
 def test_run_investigation_raises_for_unknown_investigation_id(db_session: Session) -> None:
     with pytest.raises(ValueError, match="unknown investigation_id"):
-        engine.run_investigation(db_session, _FakeLLM(_PLAN), "does-not-exist")
+        engine.run_investigation(db_session, db_session, _FakeLLM(_PLAN), "does-not-exist")
+
+
+def test_advance_increments_step_and_query_counts(db_session: Session) -> None:
+    investigation = _make_investigation(db_session)
+    engine._advance(db_session, investigation, time.monotonic(), is_query=True)
+    assert investigation.step_count == 1
+    assert investigation.query_count == 1
+
+    engine._advance(db_session, investigation, time.monotonic(), is_query=False)
+    assert investigation.step_count == 2
+    assert investigation.query_count == 1
+
+
+def test_advance_raises_when_step_budget_exceeded(db_session: Session) -> None:
+    investigation = _make_investigation(db_session, step_count=engine._MAX_STEPS)
+    with pytest.raises(engine._StoppingConditionExceeded) as exc_info:
+        engine._advance(db_session, investigation, time.monotonic(), is_query=False)
+    assert exc_info.value.terminal_status == "partial"
+
+
+def test_advance_raises_when_query_budget_exceeded(db_session: Session) -> None:
+    investigation = _make_investigation(db_session, query_count=engine._MAX_QUERIES)
+    with pytest.raises(engine._StoppingConditionExceeded) as exc_info:
+        engine._advance(db_session, investigation, time.monotonic(), is_query=True)
+    assert exc_info.value.terminal_status == "partial"
+
+
+def test_advance_raises_timed_out_when_wall_clock_budget_exceeded(db_session: Session) -> None:
+    investigation = _make_investigation(db_session)
+    started_in_the_past = time.monotonic() - (engine._WALL_CLOCK_TIMEOUT_SECONDS + 1)
+    with pytest.raises(engine._StoppingConditionExceeded) as exc_info:
+        engine._advance(db_session, investigation, started_in_the_past, is_query=False)
+    assert exc_info.value.terminal_status == "timed_out"
+
+
+def test_advance_raises_cancelled_when_cancel_requested_is_set(db_session: Session) -> None:
+    investigation = _make_investigation(db_session, cancel_requested=True)
+    with pytest.raises(engine._StoppingConditionExceeded) as exc_info:
+        engine._advance(db_session, investigation, time.monotonic(), is_query=False)
+    assert exc_info.value.terminal_status == "cancelled"
+
+
+def test_run_investigation_stops_cleanly_when_cancel_requested_is_already_set(
+    db_session: Session,
+) -> None:
+    investigation = _make_investigation(db_session, cancel_requested=True)
+
+    with patch.object(engine, "compare_periods", return_value=_REVENUE_RESULT):
+        engine.run_investigation(
+            db_session, db_session, _FakeLLM(_PLAN), investigation.investigation_id
+        )
+
+    db_session.refresh(investigation)
+    assert investigation.status == "cancelled"
+
+    events = (
+        db_session.execute(
+            select(InvestigationEvent).where(
+                InvestigationEvent.investigation_id == investigation.investigation_id
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert any(e.event_type == "status_change" for e in events)
+    # Stopped at the very first _advance call, before any evidence/report
+    # for this investigation exists.
+    assert (
+        db_session.execute(
+            select(Report).where(Report.investigation_id == investigation.investigation_id)
+        ).scalar_one_or_none()
+        is None
+    )

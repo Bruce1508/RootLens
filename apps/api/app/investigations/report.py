@@ -43,6 +43,7 @@ def generate_report(
     orders_result: ToolResult,
     cancellation_result: ToolResult,
     contribution_result: ToolResult,
+    ad_hoc_result: ToolResult | None = None,
 ) -> InvestigationReport:
     observed_change = build_observed_change(investigation.metric, revenue_result)
     status = determine_status(hypothesis, contribution_result)
@@ -59,6 +60,9 @@ def generate_report(
         cancellation_result.evidence_id: cancellation_result,
         contribution_result.evidence_id: contribution_result,
     }
+    if ad_hoc_result is not None:
+        allowed_evidence_ids.add(ad_hoc_result.evidence_id)
+        evidence_by_id[ad_hoc_result.evidence_id] = ad_hoc_result
 
     narrative = _generate_narrative(
         llm, investigation, hypothesis, contribution_result, allowed_evidence_ids
