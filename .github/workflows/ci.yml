@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: rootlens
+      POSTGRES_USER: rootlens_app
+      POSTGRES_PASSWORD: changeme_app
+      ROOTLENS_READONLY_PASSWORD: changeme_readonly
+      # Tests talk to rootlens_test, never the dev database — see
+      # apps/api/tests/integration/conftest.py.
+      DATABASE_URL: postgresql+psycopg://rootlens_app:changeme_app@localhost:5432/rootlens_test
+      DATABASE_URL_READONLY: postgresql+psycopg://rootlens_readonly:changeme_readonly@localhost:5432/rootlens_test
+      TEST_DATABASE_URL: postgresql+psycopg://rootlens_app:changeme_app@localhost:5432/rootlens_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Postgres and wait until healthy (bootstraps roles + rootlens_test via db/init)
+        run: docker compose up -d --wait postgres
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install backend dependencies
+        working-directory: apps/api
+        run: uv sync
+
+      - name: Apply migrations (rootlens_test)
+        working-directory: apps/api
+        run: uv run alembic upgrade head
+
+      - name: Lint
+        working-directory: apps/api
+        run: uv run ruff check .
+
+      - name: Type check
+        working-directory: apps/api
+        run: uv run mypy app
+
+      - name: Test
+        working-directory: apps/api
+        # Tests that require a live local Ollama daemon skip themselves
+        # automatically (pytest.mark.skipif) — no CI-specific filtering
+        # needed.
+        run: uv run pytest tests -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Lint
+        working-directory: apps/web
+        run: npm run lint
+
+      - name: Type check
+        working-directory: apps/web
+        run: npm run typecheck
+
+      - name: Unit test
+        working-directory: apps/web
+        run: npm run test
+
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E test (mocked API, no backend needed)
+        working-directory: apps/web
+        run: npx playwright test

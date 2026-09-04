@@ -5,6 +5,7 @@
 
   ### A local-first AI business analyst that investigates *why* a metric changed — not just that it did
 
+  [![CI](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml)
   [![License: MIT](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
   [![Status](https://img.shields.io/badge/milestones-0--6%20complete-2ea44f?style=flat-square)](#status)
   [![Backend](https://img.shields.io/badge/backend-FastAPI%20%2F%20Python%203.13-3776AB?style=flat-square&logo=python&logoColor=white)](apps/api)
@@ -13,6 +14,12 @@
   [![LLM](https://img.shields.io/badge/LLM-local%20via%20Ollama-6E56CF?style=flat-square)](https://ollama.com)
   [![Stars](https://img.shields.io/github/stars/Bruce1508/RootLens?style=flat-square&color=black)](https://github.com/Bruce1508/RootLens/stargazers)
 
+</div>
+
+<br>
+
+<div align="center">
+  <img src="docs/assets/demo.gif" alt="RootLens demo: starting an investigation from the dashboard, watching the live trace, then a completed report with evidence citations" width="820" />
 </div>
 
 <br>
@@ -42,6 +49,7 @@ requirements document this was built against.
 - [What RootLens does](#what-rootlens-does)
 - [Screenshots](#screenshots)
 - [Status](#status)
+- [How this was built](#how-this-was-built)
 - [Prerequisites](#prerequisites)
 - [Quickstart](#quickstart)
 - [Running the incident benchmark](#running-the-incident-benchmark)
@@ -128,6 +136,37 @@ What this *doesn't* mean: RootLens is not under active maintenance,
 does not have CI/CD or a hosted deployment, and its [known
 limitations](#known-limitations) are recorded deliberately rather than
 smoothed over — read them before assuming a given behavior is a bug.
+
+<br>
+
+## How this was built
+
+RootLens was built with [Claude Code](https://claude.com/claude-code)
+as a pair-programming tool across the full lifecycle — design
+discussion, implementation, testing, and live debugging. The split of
+responsibility was deliberate:
+
+- **The design decisions were mine**: the bounded, mostly-deterministic
+  investigation loop instead of a free-form agent (PRD §6); the
+  write/read-only database role split (ADR-0004); the SQL guardrail
+  approach — parse with `sqlglot` and reject only what can't be
+  classified, rather than regex-filtering (see [Known
+  limitations](#known-limitations)); the hidden `eval` schema so ground
+  truth can't leak into the model's own queries (ADR-0007); and every
+  trade-off recorded in `docs/decisions/` and above.
+- **Claude Code did most of the typing**, under continuous direction —
+  implementing each milestone against the PRD, writing the test suite,
+  and catching real bugs during live smoke-testing. One concrete
+  example: an early version of the SQL guardrail rejected ordinary
+  `OR`/`CASE WHEN` SQL because `sqlglot` classifies them as `exp.Func`
+  subclasses too; caught by a real Ollama-generated query failing live,
+  fixed by narrowing the rejection to `exp.Anonymous` specifically.
+
+I'm saying this directly rather than leaving it to be inferred from
+commit timestamps: how someone directs an AI coding tool — what they
+scope up front, what they insist on verifying live instead of trusting,
+what they choose not to automate — is itself part of the engineering
+signal here, not something to obscure.
 
 <br>
 
