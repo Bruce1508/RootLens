@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { KpiCard } from "@/components/kpi-card";
-import { getMetricsSummary, type MetricsSummary } from "@/lib/api-client";
+import {
+  createInvestigation,
+  getInvestigations,
+  getMetricsSummary,
+  type InvestigationView,
+  type MetricsSummary,
+} from "@/lib/api-client";
 import { formatCurrency, formatPercentChange } from "@/lib/format";
 
 // Defaults chosen to match the fixture dataset's two non-overlapping
@@ -14,6 +22,8 @@ const DEFAULT_COMPARISON_START = "2017-12-01";
 const DEFAULT_COMPARISON_END = "2017-12-31";
 
 export default function Home() {
+  const router = useRouter();
+
   const [currentStart, setCurrentStart] = useState(DEFAULT_CURRENT_START);
   const [currentEnd, setCurrentEnd] = useState(DEFAULT_CURRENT_END);
   const [comparisonStart, setComparisonStart] = useState(DEFAULT_COMPARISON_START);
@@ -22,6 +32,14 @@ export default function Home() {
   const [summary, setSummary] = useState<MetricsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isInvestigating, setIsInvestigating] = useState(false);
+  const [investigateError, setInvestigateError] = useState<string | null>(null);
+
+  const [recentInvestigations, setRecentInvestigations] = useState<
+    InvestigationView[] | null
+  >(null);
+  const [recentError, setRecentError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,11 +71,40 @@ export default function Home() {
     };
   }, [currentStart, currentEnd, comparisonStart, comparisonEnd]);
 
+  useEffect(() => {
+    getInvestigations()
+      .then(setRecentInvestigations)
+      .catch((err: unknown) =>
+        setRecentError(
+          err instanceof Error ? err.message : "Failed to load recent investigations",
+        ),
+      );
+  }, []);
+
+  const handleInvestigate = useCallback(async () => {
+    setIsInvestigating(true);
+    setInvestigateError(null);
+    try {
+      const investigation = await createInvestigation({
+        metric: "product_revenue",
+        current_period: { start: currentStart, end: currentEnd },
+        comparison_period: { start: comparisonStart, end: comparisonEnd },
+      });
+      router.push(`/investigations/${investigation.investigation_id}`);
+    } catch (err) {
+      setInvestigateError(
+        err instanceof Error ? err.message : "Failed to start investigation",
+      );
+      setIsInvestigating(false);
+    }
+  }, [currentStart, currentEnd, comparisonStart, comparisonEnd, router]);
+
   return (
     <main className="mx-auto max-w-3xl p-8">
       <h1 className="text-xl font-semibold">RootLens</h1>
       <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        KPI dashboard — deterministic period comparison (Milestone 1, no AI involved yet).
+        KPI dashboard — pick two periods, then investigate why revenue changed
+        between them.
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
@@ -134,6 +181,72 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      <div className="mt-6">
+        <button
+          type="button"
+          onClick={handleInvestigate}
+          disabled={isInvestigating}
+          className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
+        >
+          {isInvestigating ? "Starting investigation…" : "Investigate revenue change"}
+        </button>
+        {investigateError && (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+            {investigateError}
+          </p>
+        )}
+      </div>
+
+      <section className="mt-10">
+        <h2 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+          Recent investigations
+        </h2>
+
+        {recentError && (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+            {recentError}
+          </p>
+        )}
+
+        {recentInvestigations === null && !recentError && (
+          <p className="mt-2 text-sm text-neutral-500">Loading…</p>
+        )}
+
+        {recentInvestigations !== null && recentInvestigations.length === 0 && (
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+            No investigations yet — start one above.
+          </p>
+        )}
+
+        {recentInvestigations !== null && recentInvestigations.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {recentInvestigations.map((investigation) => (
+              <li key={investigation.investigation_id}>
+                <Link
+                  href={`/investigations/${investigation.investigation_id}`}
+                  className="block rounded-lg border border-neutral-200 p-3 text-sm hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium">
+                        {investigation.metric} — {investigation.current_period.start}..
+                        {investigation.current_period.end}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        {new Date(investigation.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                      {investigation.status}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

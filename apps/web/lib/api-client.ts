@@ -52,6 +52,13 @@ export interface DatePeriod {
   end: string;
 }
 
+export interface InvestigationCreateRequest {
+  metric: string;
+  current_period: DatePeriod;
+  comparison_period: DatePeriod;
+  question?: string | null;
+}
+
 export interface InvestigationView {
   investigation_id: string;
   metric: string;
@@ -181,6 +188,20 @@ export function getMetricsSummary(
     comparison_start: comparisonStart,
     comparison_end: comparisonEnd,
   });
+}
+
+export function createInvestigation(
+  request: InvestigationCreateRequest,
+): Promise<InvestigationView> {
+  return fetchJson<InvestigationView>("/api/investigations", undefined, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export function getInvestigations(): Promise<InvestigationView[]> {
+  return fetchJson<InvestigationView[]>("/api/investigations");
 }
 
 export function getInvestigation(
