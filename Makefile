@@ -1,6 +1,6 @@
 .PHONY: setup up down migrate ingest ingest-fixtures db-reset \
-        test test-backend test-frontend lint format typecheck \
-        eval-seed eval-run eval
+        test test-backend test-frontend test-e2e lint format typecheck \
+        eval-seed eval-run eval demo
 
 setup:
 	cp -n .env.example .env || true
@@ -40,6 +40,12 @@ test-backend:
 
 test-frontend:
 	cd apps/web && npm run test
+
+test-e2e:
+	cd apps/web && npm run test:e2e
+
+demo:
+	./scripts/demo.sh
 
 lint:
 	cd apps/api && uv run ruff check .
