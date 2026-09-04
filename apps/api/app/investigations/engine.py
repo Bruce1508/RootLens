@@ -2,6 +2,7 @@ import time
 import uuid
 
 from sqlalchemy import select
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from app.analytics.calculate_contribution import calculate_contribution
@@ -325,6 +326,13 @@ def _maybe_run_ad_hoc_query(
     decision = llm.generate_structured(prompt, AdHocQueryDecision)
     _advance(write_session, investigation, started_at, is_query=False)
     _record_event(write_session, investigation, "ad_hoc_query_decision", decision.model_dump())
+    # Committed before the risky run_safe_sql call below: a query that
+    # passes every FR-8 guardrail can still fail at Postgres execution
+    # (e.g. a GROUP BY violation sqlglot has no opinion on), which aborts
+    # readonly_session's transaction and requires a rollback to recover —
+    # this checkpoint guarantees that rollback can never discard the
+    # decision this step already made.
+    write_session.commit()
 
     if not decision.should_query or not decision.query:
         return None
@@ -333,19 +341,34 @@ def _maybe_run_ad_hoc_query(
     purpose = decision.purpose or "clarify an inconclusive hypothesis"
     for attempt in range(_MAX_SQL_CORRECTION_ATTEMPTS):
         try:
-            result = run_safe_sql(readonly_session, query, purpose)
-        except UnsafeSqlError as exc:
+            # A SAVEPOINT, not a full rollback: a DBAPIError aborts the
+            # current transaction and every subsequent statement on this
+            # session (including the next retry attempt) would fail until
+            # that's cleared, but a plain readonly_session.rollback()
+            # would roll back the *entire* transaction — in production
+            # readonly_session is a dedicated connection so that's
+            # harmless, but it's needlessly broad, and it's actively
+            # wrong whenever this is called with the same session as
+            # write_session (as several engine tests do), where it would
+            # also discard write_session's own not-yet-committed state.
+            with readonly_session.begin_nested():
+                result = run_safe_sql(readonly_session, query, purpose)
+        except (UnsafeSqlError, DBAPIError) as exc:
+            reason = (
+                str(exc.orig) if isinstance(exc, DBAPIError) and exc.orig is not None else str(exc)
+            )
             _advance(write_session, investigation, started_at, is_query=True)
             _record_event(
                 write_session,
                 investigation,
                 "ad_hoc_query_rejected",
-                {"query": query, "reason": str(exc), "attempt": attempt + 1},
+                {"query": query, "reason": reason, "attempt": attempt + 1},
             )
+            write_session.commit()
             if attempt + 1 >= _MAX_SQL_CORRECTION_ATTEMPTS:
                 return None
             retry_prompt = (
-                f"{prompt}\n\nYour previous query was rejected: {exc}\n"
+                f"{prompt}\n\nYour previous query was rejected: {reason}\n"
                 "Respond again with should_query=true and a corrected query, "
                 "or should_query=false if you can't correct it."
             )

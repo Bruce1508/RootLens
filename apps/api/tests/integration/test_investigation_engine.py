@@ -215,6 +215,95 @@ def test_run_investigation_marks_hypothesis_inconclusive_when_contribution_not_c
     assert report.status == "partial"
 
 
+class _FakeLLMWithAdHocRetry(_FakeLLM):
+    """First AdHocQueryDecision call returns a query that's guardrail-safe
+    but semantically invalid SQL (passes validate_and_bound, then fails at
+    Postgres execution) — reproduces the bug where such an error wasn't
+    caught by the FR-8 correction-attempt loop and crashed the whole
+    investigation instead of triggering a retry. The second call returns
+    a corrected, valid query."""
+
+    def __init__(self, plan: DecompositionPlan, narrative: ReportNarrative | None = None) -> None:
+        super().__init__(plan, narrative)
+        self._ad_hoc_calls = 0
+
+    def generate_structured(self, prompt: str, schema: type, model: str | None = None) -> object:
+        if schema is AdHocQueryDecision:
+            self._ad_hoc_calls += 1
+            if self._ad_hoc_calls == 1:
+                return AdHocQueryDecision(
+                    should_query=True,
+                    # Passes every FR-8 guardrail (single SELECT, allowed
+                    # table, no disallowed functions) but is semantically
+                    # invalid: order_status is neither grouped nor
+                    # aggregated, and isn't functionally dependent on the
+                    # GROUP BY expression the way a primary key would be
+                    # -> a real GroupingError from Postgres, not an
+                    # UnsafeSqlError.
+                    query=(
+                        "SELECT order_status, COUNT(*) FROM orders "
+                        "GROUP BY DATE(order_purchase_timestamp)"
+                    ),
+                    purpose="inspect order status distribution over time",
+                )
+            return AdHocQueryDecision(
+                should_query=True,
+                query="SELECT order_status, COUNT(*) FROM orders GROUP BY order_status",
+                purpose="corrected: aggregate by order_status",
+            )
+        return super().generate_structured(prompt, schema, model)
+
+
+def test_run_investigation_recovers_when_ad_hoc_query_fails_at_execution(
+    db_session: Session,
+) -> None:
+    investigation = _make_investigation(db_session)
+    # A low share_of_total_change leaves the hypothesis inconclusive,
+    # which is what makes the engine offer the ad hoc SQL step at all.
+    contribution_result = _tool_result(
+        "calculate_contribution",
+        [{"segment_value": "SP", "change": -50.0, "share_of_total_change": 0.2}],
+    )
+    narrative = _narrative_citing(_REVENUE_RESULT.evidence_id, contribution_result.evidence_id)
+
+    with (
+        patch.object(
+            engine,
+            "compare_periods",
+            side_effect=[_REVENUE_RESULT, _ORDERS_RESULT, _CANCELLATION_RESULT],
+        ),
+        patch.object(engine, "calculate_contribution", return_value=contribution_result),
+    ):
+        engine.run_investigation(
+            db_session,
+            db_session,
+            _FakeLLMWithAdHocRetry(_PLAN, narrative),
+            investigation.investigation_id,
+        )
+
+    db_session.refresh(investigation)
+    # Before the fix: a DBAPIError from the first (bad) query propagated
+    # out of run_investigation uncaught, leaving status == "failed".
+    assert investigation.status == "completed"
+
+    events = (
+        db_session.execute(
+            select(InvestigationEvent)
+            .where(InvestigationEvent.investigation_id == investigation.investigation_id)
+            .order_by(InvestigationEvent.id)
+        )
+        .scalars()
+        .all()
+    )
+    rejected = [e for e in events if e.event_type == "ad_hoc_query_rejected"]
+    assert len(rejected) == 1
+    assert "order_status" in rejected[0].payload["reason"]
+
+    tool_calls = [e for e in events if e.event_type == "tool_call"]
+    ad_hoc_calls = [e for e in tool_calls if e.payload.get("tool_name") == "run_safe_sql"]
+    assert len(ad_hoc_calls) == 1
+
+
 def test_run_investigation_raises_for_unknown_investigation_id(db_session: Session) -> None:
     with pytest.raises(ValueError, match="unknown investigation_id"):
         engine.run_investigation(db_session, db_session, _FakeLLM(_PLAN), "does-not-exist")
