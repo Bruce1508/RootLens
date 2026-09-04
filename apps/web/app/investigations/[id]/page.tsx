@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useRef, useState } from "react";
 import { EvidenceDrawer } from "@/components/evidence-drawer";
 import { HypothesisPanel } from "@/components/hypothesis-panel";
 import {
+  cancelInvestigation,
   getEvidence,
   getInvestigation,
   getInvestigationEvents,
@@ -118,6 +119,19 @@ export default function InvestigationPage({
     setEvidenceError(null);
   }, []);
 
+  const [isCancelling, setIsCancelling] = useState(false);
+  const handleCancel = useCallback(async () => {
+    setIsCancelling(true);
+    try {
+      const updated = await cancelInvestigation(id);
+      setInvestigation(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to cancel investigation");
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [id]);
+
   if (isLoading) {
     return (
       <main className="mx-auto max-w-3xl p-8">
@@ -157,15 +171,27 @@ export default function InvestigationPage({
             </p>
           )}
         </div>
-        <span
-          data-testid="investigation-status"
-          className={`rounded px-2 py-1 text-xs font-medium ${
-            STATUS_BADGE_STYLES[investigation.status] ??
-            STATUS_BADGE_STYLES.cancelled
-          }`}
-        >
-          {investigation.status}
-        </span>
+        <div className="flex items-center gap-2">
+          {investigation.status === "running" && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={isCancelling || investigation.cancel_requested}
+              className="rounded border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900"
+            >
+              {investigation.cancel_requested ? "Cancelling…" : "Cancel"}
+            </button>
+          )}
+          <span
+            data-testid="investigation-status"
+            className={`rounded px-2 py-1 text-xs font-medium ${
+              STATUS_BADGE_STYLES[investigation.status] ??
+              STATUS_BADGE_STYLES.cancelled
+            }`}
+          >
+            {investigation.status}
+          </span>
+        </div>
       </div>
 
       <section className="mt-6">

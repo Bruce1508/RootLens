@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  cancelInvestigation,
   getEvaluation,
   getEvaluations,
   getEvidence,
@@ -190,5 +191,27 @@ describe("getEvaluation", () => {
     );
 
     await expect(getEvaluation("does-not-exist")).rejects.toThrow("evaluation run not found");
+  });
+});
+
+describe("cancelInvestigation", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("posts to the cancel endpoint and returns the updated investigation", async () => {
+    const body = { investigation_id: "inv-1", status: "running", cancel_requested: true };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(body),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await cancelInvestigation("inv-1");
+
+    expect(result).toEqual(body);
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init).toEqual({ method: "POST" });
   });
 });

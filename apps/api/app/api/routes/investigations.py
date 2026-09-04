@@ -63,6 +63,7 @@ def _to_view(investigation: Investigation, session: Session) -> InvestigationVie
         status=investigation.status,
         step_count=investigation.step_count,
         query_count=investigation.query_count,
+        cancel_requested=investigation.cancel_requested,
         created_at=investigation.created_at,
         updated_at=investigation.updated_at,
         report=report,
@@ -79,6 +80,23 @@ def post_investigation(
         investigation = create_investigation(session, background_tasks, request)
     except (ValueError, KeyError) as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
+    return _to_view(investigation, session)
+
+
+@router.post("/api/investigations/{investigation_id}/cancel")
+def cancel_investigation(
+    investigation_id: str,
+    session: Annotated[Session, Depends(get_write_session)],
+) -> InvestigationView:
+    investigation = session.get(Investigation, investigation_id)
+    if investigation is None:
+        raise HTTPException(status_code=404, detail="investigation not found")
+    # Idempotent: a no-op on an already-terminal investigation rather than
+    # an error — the engine's own engine._advance loop is what actually
+    # observes this flag and stops the run (Milestone 6).
+    if investigation.status == "running":
+        investigation.cancel_requested = True
+        session.commit()
     return _to_view(investigation, session)
 
 

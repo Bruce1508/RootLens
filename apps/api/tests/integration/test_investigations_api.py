@@ -83,6 +83,64 @@ def test_get_investigation_returns_404_for_unknown_id(db_session: Session) -> No
     assert response.status_code == 404
 
 
+def test_cancel_investigation_sets_flag_on_a_running_investigation(db_session: Session) -> None:
+    with patch("app.investigations.service._run_in_background"):
+        app.dependency_overrides[get_write_session] = lambda: db_session
+        app.dependency_overrides[get_readonly_session] = lambda: db_session
+        try:
+            client = TestClient(app)
+            create_response = client.post("/api/investigations", json=_VALID_BODY)
+            investigation_id = create_response.json()["investigation_id"]
+
+            response = client.post(f"/api/investigations/{investigation_id}/cancel")
+        finally:
+            app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["cancel_requested"] is True
+
+    investigation = db_session.get(Investigation, investigation_id)
+    assert investigation.cancel_requested is True
+
+
+def test_cancel_investigation_is_a_no_op_on_an_already_terminal_investigation(
+    db_session: Session,
+) -> None:
+    investigation = Investigation(
+        investigation_id="inv-terminal",
+        metric="product_revenue",
+        metric_definition_version="product_revenue:v1",
+        current_period_start="2018-01-01",
+        current_period_end="2018-01-31",
+        comparison_period_start="2017-12-01",
+        comparison_period_end="2017-12-31",
+        status="completed",
+    )
+    db_session.add(investigation)
+    db_session.commit()
+
+    app.dependency_overrides[get_write_session] = lambda: db_session
+    try:
+        client = TestClient(app)
+        response = client.post("/api/investigations/inv-terminal/cancel")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["cancel_requested"] is False
+
+
+def test_cancel_investigation_returns_404_for_unknown_id(db_session: Session) -> None:
+    app.dependency_overrides[get_write_session] = lambda: db_session
+    try:
+        client = TestClient(app)
+        response = client.post("/api/investigations/does-not-exist/cancel")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+
+
 def _ollama_is_reachable() -> bool:
     try:
         httpx.get("http://localhost:11434/api/tags", timeout=1.0)

@@ -37,6 +37,7 @@ class InvestigationView(BaseModel):
     status: InvestigationStatus
     step_count: int
     query_count: int
+    cancel_requested: bool
     created_at: datetime
     updated_at: datetime
     report: InvestigationReport | None = None

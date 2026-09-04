@@ -62,6 +62,7 @@ export interface InvestigationView {
   status: InvestigationStatus;
   step_count: number;
   query_count: number;
+  cancel_requested: boolean;
   created_at: string;
   updated_at: string;
   report: InvestigationReport | null;
@@ -134,7 +135,11 @@ export interface EvaluationRunDetailView extends EvaluationRunView {
   cases: EvaluationCaseResultView[];
 }
 
-async function fetchJson<T>(path: string, params?: Record<string, string>): Promise<T> {
+async function fetchJson<T>(
+  path: string,
+  params?: Record<string, string>,
+  init?: RequestInit,
+): Promise<T> {
   const url = new URL(path, API_BASE_URL);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
@@ -142,7 +147,7 @@ async function fetchJson<T>(path: string, params?: Record<string, string>): Prom
     }
   }
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), init);
   if (!response.ok) {
     // FastAPI's HTTPException responses carry the actual reason in
     // `detail` (e.g. a 422 for invalid input) — surface that instead of
@@ -182,6 +187,12 @@ export function getInvestigation(
   investigationId: string,
 ): Promise<InvestigationView> {
   return fetchJson<InvestigationView>(`/api/investigations/${investigationId}`);
+}
+
+export function cancelInvestigation(investigationId: string): Promise<InvestigationView> {
+  return fetchJson<InvestigationView>(`/api/investigations/${investigationId}/cancel`, undefined, {
+    method: "POST",
+  });
 }
 
 export function getInvestigationEvents(
