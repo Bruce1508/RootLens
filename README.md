@@ -115,9 +115,14 @@ the full request-flow diagrams, including database roles and schemas.
 
 ## Screenshots
 
-| Dashboard | Investigation | Evaluation |
+| Dashboard | Investigation | Evidence |
 |---|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Investigation](docs/screenshots/investigation.png) | ![Evaluation](docs/screenshots/evaluation.png) |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Investigation](docs/screenshots/investigation.png) | ![Evidence](docs/screenshots/evidence.png) |
+
+Every screenshot above is the real application against the full Olist
+dataset (~99k orders) — no mock data, no design comps. The benchmark UI
+is not pictured because there is no evaluation run to show without
+executing one; `make eval` produces it locally.
 
 <br>
 
