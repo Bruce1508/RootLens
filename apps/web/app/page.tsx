@@ -21,6 +21,48 @@ const DEFAULT_CURRENT_END = "2018-01-31";
 const DEFAULT_COMPARISON_START = "2017-12-01";
 const DEFAULT_COMPARISON_END = "2017-12-31";
 
+const STATUS_STYLES: Record<string, string> = {
+  running: "text-signal",
+  completed: "text-positive",
+  partial: "text-caution",
+  failed: "text-negative",
+  timed_out: "text-negative",
+  cancelled: "text-faint",
+};
+
+/** The headline states the measured fact, then asks the one question the
+    product exists to answer. The percentage is rendered unsigned —
+    direction is carried by the verb — so this never duplicates the KPI
+    card's own signed value. */
+function headlineFor(summary: MetricsSummary | null): string | null {
+  const change = summary?.product_revenue.percent_change;
+  if (change === null || change === undefined) return null;
+  const verb = change < 0 ? "fell" : "rose";
+  return `Revenue ${verb} ${Math.abs(change * 100).toFixed(1)}% this period.`;
+}
+
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="eyebrow">{label}</span>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded border border-line bg-surface px-2.5 py-1.5 font-mono text-xs text-ink transition-colors hover:border-line-strong"
+      />
+    </label>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -36,9 +78,9 @@ export default function Home() {
   const [isInvestigating, setIsInvestigating] = useState(false);
   const [investigateError, setInvestigateError] = useState<string | null>(null);
 
-  const [recentInvestigations, setRecentInvestigations] = useState<
-    InvestigationView[] | null
-  >(null);
+  const [recentInvestigations, setRecentInvestigations] = useState<InvestigationView[] | null>(
+    null,
+  );
   const [recentError, setRecentError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,80 +134,42 @@ export default function Home() {
       });
       router.push(`/investigations/${investigation.investigation_id}`);
     } catch (err) {
-      setInvestigateError(
-        err instanceof Error ? err.message : "Failed to start investigation",
-      );
+      setInvestigateError(err instanceof Error ? err.message : "Failed to start investigation");
       setIsInvestigating(false);
     }
   }, [currentStart, currentEnd, comparisonStart, comparisonEnd, router]);
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <h1 className="text-xl font-semibold">RootLens</h1>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        KPI dashboard — pick two periods, then investigate why revenue changed
-        between them.
-      </p>
-
-      <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-        <fieldset className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-          <legend className="px-1 text-neutral-500 dark:text-neutral-400">Current period</legend>
-          <label className="flex items-center justify-between gap-2 py-1">
-            Start
-            <input
-              type="date"
-              value={currentStart}
-              onChange={(e) => setCurrentStart(e.target.value)}
-              className="rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
-            />
-          </label>
-          <label className="flex items-center justify-between gap-2 py-1">
-            End
-            <input
-              type="date"
-              value={currentEnd}
-              onChange={(e) => setCurrentEnd(e.target.value)}
-              className="rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
-            />
-          </label>
+    <main className="mx-auto max-w-6xl px-6 py-10">
+      <div className="flex flex-wrap items-end gap-x-10 gap-y-6">
+        <fieldset className="flex items-end gap-3">
+          <legend className="eyebrow mb-2">This period</legend>
+          <DateField label="From" value={currentStart} onChange={setCurrentStart} />
+          <DateField label="To" value={currentEnd} onChange={setCurrentEnd} />
         </fieldset>
-
-        <fieldset className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-          <legend className="px-1 text-neutral-500 dark:text-neutral-400">
-            Comparison period
-          </legend>
-          <label className="flex items-center justify-between gap-2 py-1">
-            Start
-            <input
-              type="date"
-              value={comparisonStart}
-              onChange={(e) => setComparisonStart(e.target.value)}
-              className="rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
-            />
-          </label>
-          <label className="flex items-center justify-between gap-2 py-1">
-            End
-            <input
-              type="date"
-              value={comparisonEnd}
-              onChange={(e) => setComparisonEnd(e.target.value)}
-              className="rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
-            />
-          </label>
+        <fieldset className="flex items-end gap-3">
+          <legend className="eyebrow mb-2">Compared with</legend>
+          <DateField label="From" value={comparisonStart} onChange={setComparisonStart} />
+          <DateField label="To" value={comparisonEnd} onChange={setComparisonEnd} />
         </fieldset>
       </div>
 
-      <div className="mt-6">
-        {isLoading && <p className="text-sm text-neutral-500">Loading…</p>}
+      <h1 className="mt-10 max-w-2xl font-serif text-4xl leading-tight tracking-tight text-balance">
+        {headlineFor(summary) ?? "What moved this period?"}{" "}
+        {headlineFor(summary) && <span className="text-signal">Why?</span>}
+      </h1>
+
+      <div className="mt-8">
+        {isLoading && <p className="font-mono text-xs text-faint">Loading…</p>}
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="max-w-xl text-sm text-negative" role="alert">
             {error}
           </p>
         )}
 
         {summary && !isLoading && !error && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid max-w-xl grid-cols-2 gap-8">
             <KpiCard
               label="Product revenue"
               currentValue={formatCurrency(summary.product_revenue.current_value)}
@@ -182,65 +186,63 @@ export default function Home() {
         )}
       </div>
 
-      <div className="mt-6">
+      <div className="mt-9">
         <button
           type="button"
           onClick={handleInvestigate}
           disabled={isInvestigating}
-          className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
+          className="rounded bg-signal px-4 py-2.5 font-mono text-xs font-medium tracking-wide text-bg transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {isInvestigating ? "Starting investigation…" : "Investigate revenue change"}
         </button>
         {investigateError && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-2.5 text-sm text-negative" role="alert">
             {investigateError}
           </p>
         )}
       </div>
 
-      <section className="mt-10">
-        <h2 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
-          Recent investigations
-        </h2>
+      <section className="mt-16">
+        <h2 className="eyebrow">Recent investigations</h2>
 
         {recentError && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-3 text-sm text-negative" role="alert">
             {recentError}
           </p>
         )}
 
         {recentInvestigations === null && !recentError && (
-          <p className="mt-2 text-sm text-neutral-500">Loading…</p>
+          <p className="mt-3 font-mono text-xs text-faint">Loading…</p>
         )}
 
         {recentInvestigations !== null && recentInvestigations.length === 0 && (
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="mt-3 font-mono text-xs text-faint">
             No investigations yet — start one above.
           </p>
         )}
 
         {recentInvestigations !== null && recentInvestigations.length > 0 && (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-4 border-t border-line">
             {recentInvestigations.map((investigation) => (
               <li key={investigation.investigation_id}>
                 <Link
                   href={`/investigations/${investigation.investigation_id}`}
-                  className="block rounded-lg border border-neutral-200 p-3 text-sm hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                  className="flex items-baseline gap-4 border-b border-line px-1 py-3 transition-colors hover:bg-surface"
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-medium">
-                        {investigation.metric} — {investigation.current_period.start}..
-                        {investigation.current_period.end}
-                      </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {new Date(investigation.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                      {investigation.status}
-                    </span>
-                  </div>
+                  <span className="font-mono text-xs text-ink">{investigation.metric}</span>
+                  <span className="font-mono text-xs text-faint tabular-nums">
+                    {investigation.current_period.start} → {investigation.current_period.end}
+                  </span>
+                  <span className="ml-auto font-mono text-xs text-faint tabular-nums">
+                    {new Date(investigation.created_at).toLocaleDateString()}
+                  </span>
+                  <span
+                    className={`w-20 text-right font-mono text-xs ${
+                      STATUS_STYLES[investigation.status] ?? "text-faint"
+                    }`}
+                  >
+                    {investigation.status}
+                  </span>
                 </Link>
               </li>
             ))}

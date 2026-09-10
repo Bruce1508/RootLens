@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* RootLens runs dark-only and on purpose: the product is an instrument for
+   reading SQL, timings, and evidence, and a dark ground lets the semantic
+   status colours below carry meaning instead of competing with a bright
+   surface. Every accent maps to a real state in the data model — there is
+   no purely decorative colour in this file. */
+@theme {
+  --color-bg: #0b0e14;
+  --color-surface: #111621;
+  --color-raised: #161c29;
+  --color-line: #212938;
+  --color-line-strong: #2c3648;
+
+  --color-ink: #e3e8f2;
+  --color-muted: #7e8aa3;
+  --color-faint: #55607a;
+
+  /* Sampled from docs/assets/logo.svg so the app and the mark share one
+     palette: the lens ring (signal -> active) and the trend line
+     (negative -> positive). */
+  --color-signal: #38bdf8; /* primary action, running investigations */
+  --color-active: #818cf8; /* in-flight LLM decisions */
+  --color-positive: #34d399; /* hypothesis supported, case pass, metric up */
+  --color-negative: #fb7185; /* hypothesis rejected, case fail, metric down */
+  --color-caution: #fbbf24; /* inconclusive, abstained, warnings */
+
 }
 
+/* `inline` matters here and nowhere else in this file: these three tokens
+   resolve variables that next/font defines on <body> at runtime, not build
+   time. Declared in a plain @theme block they get emitted with the
+   variable unresolved and the whole Plex family silently falls back to the
+   system stack — which is exactly what happened before this was split out. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-serif: var(--font-plex-serif), ui-serif, Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  /* The next/font variable directly, not var(--font-sans): tokens declared
+     in an `inline` theme block are substituted into generated utilities and
+     never emitted as custom properties, so var(--font-sans) is undefined
+     in hand-written rules like this one. */
+  font-family: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* An eyebrow label: mono, tracked out, quiet. Used for every section
+   heading so the interface reads as instrument panels rather than a
+   document outline. */
+@utility eyebrow {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+/* Exhibits arrive one at a time while an investigation runs; the entrance
+   is the only ambient motion in the app. */
+@keyframes exhibit-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility exhibit-enter {
+  animation: exhibit-in 260ms ease-out both;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

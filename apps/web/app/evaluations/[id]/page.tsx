@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useMemo, useState } from "react";
-import {
-  getEvaluation,
-  type CaseStatus,
-  type EvaluationRunDetailView,
-} from "@/lib/api-client";
+import { getEvaluation, type CaseStatus, type EvaluationRunDetailView } from "@/lib/api-client";
 
 const METRIC_LABELS: Record<string, string> = {
   root_cause_accuracy: "Root cause accuracy",
@@ -21,13 +17,19 @@ const METRIC_LABELS: Record<string, string> = {
   scenario_count: "Scenarios",
 };
 
-const STATUS_FILTERS: (CaseStatus | "all")[] = ["all", "pass", "fail", "abstained", "execution_error"];
+const STATUS_FILTERS: (CaseStatus | "all")[] = [
+  "all",
+  "pass",
+  "fail",
+  "abstained",
+  "execution_error",
+];
 
 const STATUS_STYLES: Record<CaseStatus, string> = {
-  pass: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
-  fail: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-  abstained: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  execution_error: "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+  pass: "text-positive",
+  fail: "text-negative",
+  abstained: "text-caution",
+  execution_error: "text-faint",
 };
 
 function formatMetricValue(key: string, value: number): string {
@@ -65,8 +67,8 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
 
   if (error) {
     return (
-      <main className="mx-auto max-w-4xl p-8">
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <p className="text-sm text-negative" role="alert">
           {error}
         </p>
       </main>
@@ -75,47 +77,46 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
 
   if (!run) {
     return (
-      <main className="mx-auto max-w-4xl p-8">
-        <p className="text-sm text-neutral-500">Loading…</p>
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <p className="font-mono text-xs text-faint">Loading…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-4xl p-8">
-      <h1 className="text-xl font-semibold">
-        {run.model_name} — {run.split}
-      </h1>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        {new Date(run.started_at).toLocaleString()} · {run.status}
-      </p>
+    <main className="mx-auto max-w-5xl px-6 py-10">
+      <div className="border-b border-line pb-6">
+        <h1 className="font-mono text-2xl tracking-tight">
+          {run.model_name} — {run.split}
+        </h1>
+        <p className="mt-1.5 font-mono text-xs text-faint tabular-nums">
+          {new Date(run.started_at).toLocaleString()} · {run.status}
+        </p>
+      </div>
 
       {run.aggregate_metrics && (
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
           {Object.entries(run.aggregate_metrics).map(([key, value]) => (
-            <div
-              key={key}
-              className="rounded-lg border border-neutral-200 p-3 text-sm dark:border-neutral-800"
-            >
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {METRIC_LABELS[key] ?? key}
+            <div key={key} className="border-l-2 border-line-strong pl-3">
+              <p className="eyebrow">{METRIC_LABELS[key] ?? key}</p>
+              <p className="mt-1.5 font-mono text-xl tabular-nums">
+                {formatMetricValue(key, value)}
               </p>
-              <p className="mt-1 text-lg font-semibold">{formatMetricValue(key, value)}</p>
             </div>
           ))}
         </div>
       )}
 
-      <div className="mt-6 flex gap-2">
+      <div className="mt-10 flex flex-wrap gap-2">
         {STATUS_FILTERS.map((status) => (
           <button
             key={status}
             type="button"
             onClick={() => setFilter(status)}
-            className={`rounded px-2 py-1 text-xs font-medium ${
+            className={`rounded border px-2.5 py-1 font-mono text-xs transition-colors ${
               filter === status
-                ? "bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900"
-                : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                ? "border-signal text-signal"
+                : "border-line text-muted hover:border-line-strong hover:text-ink"
             }`}
           >
             {status}
@@ -123,56 +124,41 @@ export default function EvaluationDetailPage({ params }: { params: Promise<{ id:
         ))}
       </div>
 
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full border-collapse font-mono text-xs">
           <thead>
             <tr>
-              <th className="border-b border-neutral-200 px-2 py-1 text-left dark:border-neutral-800">
-                Scenario
-              </th>
-              <th className="border-b border-neutral-200 px-2 py-1 text-left dark:border-neutral-800">
-                Template
-              </th>
-              <th className="border-b border-neutral-200 px-2 py-1 text-left dark:border-neutral-800">
-                Predicted driver
-              </th>
-              <th className="border-b border-neutral-200 px-2 py-1 text-left dark:border-neutral-800">
-                Status
-              </th>
-              <th className="border-b border-neutral-200 px-2 py-1 text-left dark:border-neutral-800">
-                Replay
-              </th>
+              {["Scenario", "Template", "Predicted driver", "Status", "Replay"].map((heading) => (
+                <th
+                  key={heading}
+                  className="border-b border-line-strong px-2 py-2 text-left font-medium tracking-wider text-faint uppercase"
+                >
+                  {heading}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {filteredCases.map((c) => (
-              <tr key={c.scenario_id}>
-                <td className="border-b border-neutral-100 px-2 py-1 font-mono text-xs dark:border-neutral-900">
-                  {c.scenario_id}
-                </td>
-                <td className="border-b border-neutral-100 px-2 py-1 text-xs dark:border-neutral-900">
-                  {c.template ?? "—"}
-                </td>
-                <td className="border-b border-neutral-100 px-2 py-1 text-xs dark:border-neutral-900">
+              <tr key={c.scenario_id} className="transition-colors hover:bg-surface">
+                <td className="border-b border-line px-2 py-2 text-ink">{c.scenario_id}</td>
+                <td className="border-b border-line px-2 py-2 text-muted">{c.template ?? "—"}</td>
+                <td className="border-b border-line px-2 py-2 text-muted">
                   {c.predicted_primary_driver ?? "—"}
                 </td>
-                <td className="border-b border-neutral-100 px-2 py-1 dark:border-neutral-900">
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_STYLES[c.status]}`}
-                  >
-                    {c.status}
-                  </span>
+                <td className={`border-b border-line px-2 py-2 ${STATUS_STYLES[c.status]}`}>
+                  {c.status}
                 </td>
-                <td className="border-b border-neutral-100 px-2 py-1 dark:border-neutral-900">
+                <td className="border-b border-line px-2 py-2">
                   {c.investigation_id ? (
                     <Link
                       href={`/investigations/${c.investigation_id}`}
-                      className="text-blue-600 underline dark:text-blue-400"
+                      className="text-signal transition-opacity hover:opacity-80"
                     >
                       view
                     </Link>
                   ) : (
-                    <span className="text-xs text-neutral-400">—</span>
+                    <span className="text-faint">—</span>
                   )}
                 </td>
               </tr>

@@ -7,19 +7,23 @@ interface KpiCardProps {
 
 export function KpiCard({ label, currentValue, percentChange, isNegative }: KpiCardProps) {
   return (
-    <div className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{currentValue}</p>
+    <div className="border-l-2 border-line-strong pl-4">
+      <p className="eyebrow">{label}</p>
+      <p className="mt-2 font-mono text-3xl font-medium tracking-tight tabular-nums">
+        {currentValue}
+      </p>
       <p
         data-testid="kpi-change"
         data-direction={isNegative ? "down" : "up"}
-        className={
-          isNegative
-            ? "mt-1 text-sm text-red-600 dark:text-red-400"
-            : "mt-1 text-sm text-green-600 dark:text-green-400"
-        }
+        className={`mt-1.5 flex items-baseline gap-1.5 font-mono text-sm tabular-nums ${
+          isNegative ? "text-negative" : "text-positive"
+        }`}
       >
-        {percentChange}
+        {/* The arrow is a sibling of the value, never part of its text node:
+            the percentage element has to read as exactly the formatted
+            string so the KPI tests can match it. */}
+        <span aria-hidden="true">{isNegative ? "▼" : "▲"}</span>
+        <span>{percentChange}</span>
       </p>
     </div>
   );
