@@ -6,6 +6,7 @@
   ### A local-first AI business analyst that investigates *why* a metric changed — not just that it did
 
   [![CI](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml)
+  [![Backend coverage](https://img.shields.io/badge/backend%20coverage-92%25-2ea44f?style=flat-square)](#status)
   [![License: MIT](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
   [![Status](https://img.shields.io/badge/milestones-0--6%20complete-2ea44f?style=flat-square)](#status)
   [![Backend](https://img.shields.io/badge/backend-FastAPI%20%2F%20Python%203.13-3776AB?style=flat-square&logo=python&logoColor=white)](apps/api)
@@ -137,8 +138,21 @@ engine makes — including, since Milestone 6, the engine's own reads.
 The dashboard's investigate/history flow (PRD acceptance criterion #4)
 is wired end-to-end, not just reachable via the API.
 
-What this *doesn't* mean: RootLens is not under active maintenance,
-does not have CI/CD or a hosted deployment, and its [known
+**Tests** — 141 backend tests at **92% coverage** over `app/`, 22
+frontend unit tests, and 4 Playwright end-to-end tests. Reproduce both
+numbers with `make coverage`.
+
+Frontend *unit* coverage is 12.4%, and that figure is a deliberate
+consequence of where the tests live rather than a gap: `lib/` and the
+presentational components are unit-tested in jsdom, while the four page
+components are covered end-to-end by Playwright, which the unit
+coverage run cannot see. Vitest is configured to measure the whole
+`app/`, `components/`, and `lib/` tree — not only the files a test
+happens to import — so that number stays honest as the app grows.
+
+What this *doesn't* mean: RootLens is not under active maintenance, and
+while CI runs on every push, there is no continuous deployment and no
+hosted demo — evaluating it means running it locally. Its [known
 limitations](#known-limitations) are recorded deliberately rather than
 smoothed over — read them before assuming a given behavior is a bug.
 
@@ -241,6 +255,7 @@ observed here.
 | `make eval-seed` / `make eval-run` / `make eval` | Seed and run the incident benchmark |
 | `make test` | Run backend (pytest) and frontend (Vitest) tests |
 | `make test-e2e` | Run frontend end-to-end tests (Playwright, mocked API) |
+| `make coverage` | Print backend and frontend coverage reports |
 | `make lint` / `make format` / `make typecheck` | Quality gates for both apps |
 
 <br>
