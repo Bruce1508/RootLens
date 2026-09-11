@@ -1,5 +1,5 @@
 .PHONY: setup up down migrate ingest ingest-fixtures db-reset \
-        test test-backend test-frontend test-e2e lint format typecheck \
+        test test-backend test-frontend test-e2e coverage lint format typecheck \
         eval-seed eval-run eval demo
 
 setup:
@@ -43,6 +43,10 @@ test-frontend:
 
 test-e2e:
 	cd apps/web && npm run test:e2e
+
+coverage:
+	cd apps/api && uv run pytest tests -q --cov --cov-report=term-missing
+	cd apps/web && npm run test:coverage
 
 demo:
 	./scripts/demo.sh
