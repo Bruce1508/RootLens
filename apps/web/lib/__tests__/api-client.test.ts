@@ -6,6 +6,7 @@ import {
   getEvidence,
   getInvestigation,
   getInvestigationEvents,
+  getInvestigations,
   getMetricsSummary,
 } from "@/lib/api-client";
 
@@ -213,5 +214,31 @@ describe("cancelInvestigation", () => {
     expect(result).toEqual(body);
     const [, init] = fetchMock.mock.calls[0];
     expect(init).toEqual({ method: "POST" });
+  });
+});
+
+describe("fetchJson in demo mode", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.NEXT_PUBLIC_DEMO_MODE;
+  });
+
+  it("resolves from the demo fixture manifest instead of calling the real API", async () => {
+    process.env.NEXT_PUBLIC_DEMO_MODE = "1";
+    const manifest = [{ key: "GET /api/investigations", file: "investigations-list.json" }];
+    const fixture = [{ investigation_id: "inv-1", status: "completed" }];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url === "/demo/manifest.json") {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve(manifest) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(fixture) });
+      }),
+    );
+
+    const result = await getInvestigations();
+    expect(result).toEqual(fixture);
   });
 });
