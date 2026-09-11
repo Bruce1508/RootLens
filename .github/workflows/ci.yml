@@ -51,7 +51,10 @@ jobs:
         # Tests that require a live local Ollama daemon skip themselves
         # automatically (pytest.mark.skipif) — no CI-specific filtering
         # needed.
-        run: uv run pytest tests -q --cov --cov-report=term
+        # --cov-fail-under guards the 92% the README advertises. The gate is
+        # 91, not 92: the headline figure is coverage.py rounding ~91.9%
+        # (1545/1681), and it drifts to ~91.7% between runs.
+        run: uv run pytest tests -q --cov --cov-report=term --cov-fail-under=91
 
   frontend:
     runs-on: ubuntu-latest
