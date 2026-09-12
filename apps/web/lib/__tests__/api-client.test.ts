@@ -228,17 +228,16 @@ describe("fetchJson in demo mode", () => {
     const manifest = [{ key: "GET /api/investigations", file: "investigations-list.json" }];
     const fixture = [{ investigation_id: "inv-1", status: "completed" }];
 
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((url: string) => {
-        if (url === "/demo/manifest.json") {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve(manifest) });
-        }
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(fixture) });
-      }),
-    );
+    const fetchMock = vi.fn((url: string) => {
+      if (url === "/demo/manifest.json") {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(manifest) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(fixture) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     const result = await getInvestigations();
     expect(result).toEqual(fixture);
+    expect(fetchMock.mock.calls[0][0]).toBe("/demo/manifest.json");
   });
 });
