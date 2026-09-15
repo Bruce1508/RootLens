@@ -82,5 +82,9 @@
   {
     "key": "GET /api/evaluations",
     "file": "evaluations-list.json"
+  },
+  {
+    "key": "GET /api/evaluations/f51f692d-f106-430c-879f-dce4019e091a",
+    "file": "evaluation-f51f692d-f106-430c-879f-dce4019e091a.json"
   }
 ]
