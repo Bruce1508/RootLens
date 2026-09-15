@@ -45,10 +45,12 @@ function DateField({
   label,
   value,
   onChange,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
@@ -57,7 +59,8 @@ function DateField({
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded border border-line bg-surface px-2.5 py-1.5 font-mono text-xs text-ink transition-colors hover:border-line-strong"
+        disabled={disabled}
+        className="rounded border border-line bg-surface px-2.5 py-1.5 font-mono text-xs text-ink transition-colors hover:border-line-strong disabled:opacity-50"
       />
     </label>
   );
@@ -65,6 +68,7 @@ function DateField({
 
 export default function Home() {
   const router = useRouter();
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "1";
 
   const [currentStart, setCurrentStart] = useState(DEFAULT_CURRENT_START);
   const [currentEnd, setCurrentEnd] = useState(DEFAULT_CURRENT_END);
@@ -144,13 +148,33 @@ export default function Home() {
       <div className="flex flex-wrap items-end gap-x-10 gap-y-6">
         <fieldset className="flex items-end gap-3">
           <legend className="eyebrow mb-2">This period</legend>
-          <DateField label="From" value={currentStart} onChange={setCurrentStart} />
-          <DateField label="To" value={currentEnd} onChange={setCurrentEnd} />
+          <DateField
+            label="From"
+            value={currentStart}
+            onChange={setCurrentStart}
+            disabled={isDemoMode}
+          />
+          <DateField
+            label="To"
+            value={currentEnd}
+            onChange={setCurrentEnd}
+            disabled={isDemoMode}
+          />
         </fieldset>
         <fieldset className="flex items-end gap-3">
           <legend className="eyebrow mb-2">Compared with</legend>
-          <DateField label="From" value={comparisonStart} onChange={setComparisonStart} />
-          <DateField label="To" value={comparisonEnd} onChange={setComparisonEnd} />
+          <DateField
+            label="From"
+            value={comparisonStart}
+            onChange={setComparisonStart}
+            disabled={isDemoMode}
+          />
+          <DateField
+            label="To"
+            value={comparisonEnd}
+            onChange={setComparisonEnd}
+            disabled={isDemoMode}
+          />
         </fieldset>
       </div>
 
@@ -190,7 +214,7 @@ export default function Home() {
         <button
           type="button"
           onClick={handleInvestigate}
-          disabled={isInvestigating}
+          disabled={isInvestigating || isDemoMode}
           className="rounded bg-signal px-4 py-2.5 font-mono text-xs font-medium tracking-wide text-bg transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {isInvestigating ? "Starting investigation…" : "Investigate revenue change"}
@@ -198,6 +222,11 @@ export default function Home() {
         {investigateError && (
           <p className="mt-2.5 text-sm text-negative" role="alert">
             {investigateError}
+          </p>
+        )}
+        {isDemoMode && (
+          <p className="mt-2.5 font-mono text-xs text-faint">
+            Disabled in this read-only demo.
           </p>
         )}
       </div>
