@@ -148,7 +148,7 @@ export function EvaluationView({ id }: { id: string }) {
                   {c.status}
                 </td>
                 <td className="border-b border-line px-2 py-2">
-                  {c.investigation_id ? (
+                  {c.investigation_id && !process.env.NEXT_PUBLIC_DEMO_MODE ? (
                     <Link
                       href={`/investigations/${c.investigation_id}`}
                       className="text-signal transition-opacity hover:opacity-80"

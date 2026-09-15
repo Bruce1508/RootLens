@@ -18,6 +18,7 @@ is worse than no job.
 """
 
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -27,7 +28,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-API_BASE_URL = "http://127.0.0.1:8010"
+API_BASE_URL = os.environ.get("ROOTLENS_API_URL", "http://localhost:8000")
 OUT_DIR = Path(__file__).resolve().parent.parent / "apps/web/public/demo"
 
 INVESTIGATIONS: list[dict[str, Any]] = [
@@ -87,7 +88,7 @@ def wait_for_api() -> None:
             return
         except (urllib.error.URLError, ConnectionError):
             time.sleep(1)
-    print("API not reachable at http://localhost:8000 -- run `make up` first.", file=sys.stderr)
+    print(f"API not reachable at {API_BASE_URL} -- run `make up` first.", file=sys.stderr)
     sys.exit(1)
 
 
@@ -176,6 +177,9 @@ def main() -> None:
             )
 
     investigations_list = request("GET", "/api/investigations")
+    investigations_list = [
+        inv for inv in investigations_list if inv["investigation_id"] in investigation_ids
+    ]
     file_name = write("investigations-list.json", investigations_list)
     manifest.append({"key": build_demo_key("GET", "/api/investigations"), "file": file_name})
 
@@ -185,7 +189,10 @@ def main() -> None:
     manifest.append({"key": build_demo_key("GET", "/api/evaluations"), "file": file_name})
 
     if evaluations_list:
-        run_id = evaluations_list[0]["run_id"]
+        held_out_run = next(
+            (run for run in evaluations_list if run.get("split") == "held_out"), None
+        )
+        run_id = (held_out_run or evaluations_list[0])["run_id"]
         evaluation_ids.append(run_id)
         evaluation_detail = request("GET", f"/api/evaluations/{run_id}")
         file_name = write(f"evaluation-{run_id}.json", evaluation_detail)

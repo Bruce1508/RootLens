@@ -12,7 +12,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npx --yes serve@latest out -l 4173",
+    command: "npx --yes serve@14.2.6 out -l 4173",
     url: "http://localhost:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

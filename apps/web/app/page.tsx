@@ -68,7 +68,7 @@ function DateField({
 
 export default function Home() {
   const router = useRouter();
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "1";
+  const isDemoMode = Boolean(process.env.NEXT_PUBLIC_DEMO_MODE);
 
   const [currentStart, setCurrentStart] = useState(DEFAULT_CURRENT_START);
   const [currentEnd, setCurrentEnd] = useState(DEFAULT_CURRENT_END);
