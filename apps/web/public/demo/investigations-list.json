@@ -1,0 +1,238 @@
+[
+  {
+    "investigation_id": "f0c3ba87-8f54-495a-b3e5-b8531e064675",
+    "metric": "product_revenue",
+    "metric_definition_version": "product_revenue:v1",
+    "current_period": {
+      "start": "2018-04-01",
+      "end": "2018-04-30"
+    },
+    "comparison_period": {
+      "start": "2018-03-01",
+      "end": "2018-03-31"
+    },
+    "question": "What drove the change in revenue this period?",
+    "status": "completed",
+    "step_count": 5,
+    "query_count": 4,
+    "cancel_requested": false,
+    "created_at": "2026-09-12T06:44:08.162011",
+    "updated_at": "2026-09-12T06:45:38.554105",
+    "report": {
+      "status": "answered",
+      "headline": "Product Revenue Increase Driven by Mix of Order Volume and Average Order Value",
+      "observed_change": {
+        "metric": "product_revenue",
+        "current_value": 993592.98,
+        "comparison_value": 981051.06,
+        "percent_change": 0.012784166402103399,
+        "evidence_ids": [
+          "e6ba043a-c288-49db-878a-a7f0720be4ce"
+        ]
+      },
+      "findings": [
+        {
+          "claim": "Product_revenue increased by 1.3% (evidence ID: 0d5a34b0-4b86-48a9-aa49-887d234cda61)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "0d5a34b0-4b86-48a9-aa49-887d234cda61"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "Order count decreased by 3.5% (evidence ID: 7764dd7b-f478-4bde-8610-64ca1e93dc35)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "7764dd7b-f478-4bde-8610-64ca1e93dc35"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "Cancellation rate decreased by 51.7% (evidence ID: 8595a0fb-6e94-4f97-b610-67cde1cf001e)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "8595a0fb-6e94-4f97-b610-67cde1cf001e"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "The largest contributing segment was 'PR', responsible for 122.5% of the total change (evidence ID: e6ba043a-c288-49db-878a-a7f0720be4ce)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "e6ba043a-c288-49db-878a-a7f0720be4ce"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "limitations": [
+        "The data does not specify the exact reasons for the change in average order value",
+        "The analysis does not account for external factors such as market trends or competitor activity"
+      ],
+      "recommended_next_checks": [
+        "Inspect customer_state to understand if specific regions contributed to the average order value increase",
+        "Review product_category to identify if certain product types drove the revenue growth",
+        "Analyze seller performance to determine if specific sellers influenced the change in average order value"
+      ]
+    }
+  },
+  {
+    "investigation_id": "69182461-d134-401a-a2d9-566f5125c352",
+    "metric": "product_revenue",
+    "metric_definition_version": "product_revenue:v1",
+    "current_period": {
+      "start": "2018-01-01",
+      "end": "2018-01-31"
+    },
+    "comparison_period": {
+      "start": "2017-12-01",
+      "end": "2017-12-31"
+    },
+    "question": "Why did revenue decline?",
+    "status": "completed",
+    "step_count": 8,
+    "query_count": 6,
+    "cancel_requested": false,
+    "created_at": "2026-09-12T06:43:05.610388",
+    "updated_at": "2026-09-12T06:44:06.908283",
+    "report": {
+      "status": "partial",
+      "headline": "Product Revenue Growth Driven by SP Segment but Cancellation Rate Increase Raises Concerns",
+      "observed_change": {
+        "metric": "product_revenue",
+        "current_value": 945606.29,
+        "comparison_value": 742433.79,
+        "percent_change": 0.2736573991331941,
+        "evidence_ids": [
+          "c52f6ec6-0cca-48bf-8f61-321e23c9c9d9"
+        ]
+      },
+      "findings": [
+        {
+          "claim": "Product_revenue increased by 27.4% (evidence ID: 3be66378-ed39-4865-92f1-2e8a7c83bca7)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "3be66378-ed39-4865-92f1-2e8a7c83bca7"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "Order count increased by 27.8% (evidence ID: 6d536dc5-14a1-44e9-803a-3966949e6d3f)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "6d536dc5-14a1-44e9-803a-3966949e6d3f"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "Cancellation rate rose by 21.4% (evidence ID: 98c1f67a-6c49-4bd1-b295-65a46065d6b9)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "98c1f67a-6c49-4bd1-b295-65a46065d6b9"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "The SP segment contributed 46.4% of the total change (evidence ID: c52f6ec6-0cca-48bf-8f61-321e23c9c9d9)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "c52f6ec6-0cca-48bf-8f61-321e23c9c9d9"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "The cancellation rate increase suggests that revenue growth may be partially offset by cancellations (evidence ID: 98c1f67a-6c49-4bd1-b295-65a46065d6b9)",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "98c1f67a-6c49-4bd1-b295-65a46065d6b9"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "limitations": [
+        "The hypothesis is inconclusive due to limited data on the relationship between cancellation rates and revenue growth.",
+        "The analysis does not account for external factors such as market trends or competitor activity.",
+        "The contribution of the SP segment to revenue growth is not fully validated without further analysis."
+      ],
+      "recommended_next_checks": [
+        "Investigate the correlation between cancellation rates and revenue growth using detailed transaction data.",
+        "Analyze the SP segment's performance to validate its contribution to revenue growth.",
+        "Conduct a deeper analysis of the reasons behind the increased cancellation rate."
+      ]
+    }
+  },
+  {
+    "investigation_id": "17f4ecd2-a471-4b18-84ab-911d90b7fe70",
+    "metric": "product_revenue",
+    "metric_definition_version": "product_revenue:v1",
+    "current_period": {
+      "start": "2018-02-01",
+      "end": "2018-02-28"
+    },
+    "comparison_period": {
+      "start": "2018-01-01",
+      "end": "2018-01-31"
+    },
+    "question": null,
+    "status": "completed",
+    "step_count": 5,
+    "query_count": 4,
+    "cancel_requested": false,
+    "created_at": "2026-09-12T06:31:56.516588",
+    "updated_at": "2026-09-12T06:32:36.325011",
+    "report": {
+      "status": "answered",
+      "headline": "Product Revenue Decline Driven by Cancellations in SP Segment",
+      "observed_change": {
+        "metric": "product_revenue",
+        "current_value": 837895.43,
+        "comparison_value": 945606.29,
+        "percent_change": -0.11390666616652897,
+        "evidence_ids": [
+          "e2760221-e350-403f-a66b-a189bee1c1b2"
+        ]
+      },
+      "findings": [
+        {
+          "claim": "Product revenue decreased by 18.2% in the period, with the SP segment contributing 60.0% of the total decline.",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "00d6a3fb-019f-4952-bbfe-bc46bbdc7106"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "Cancellation rate increased by 32.6% in the period, outpacing the 7.8% decrease in order count.",
+          "claim_type": "interpretation",
+          "evidence_ids": [],
+          "confidence": "high"
+        },
+        {
+          "claim": "The SP segment accounted for 60.0% of the total change in product_revenue.",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "e2760221-e350-403f-a66b-a189bee1c1b2"
+          ],
+          "confidence": "high"
+        },
+        {
+          "claim": "Order count decreased by 7.8%, while the cancellation rate increased by 32.6%.",
+          "claim_type": "interpretation",
+          "evidence_ids": [
+            "ede03eec-8ac5-40b6-a940-3cd9c3b44779"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "limitations": [
+        "The analysis does not account for external factors such as market trends or competitor activity.",
+        "The data does not include information on customer behavior changes or product quality issues.",
+        "The relationship between cancellation rate and revenue decline is inferred but not directly measured."
+      ],
+      "recommended_next_checks": [
+        "Review the SP segment's customer feedback and support tickets for patterns in cancellations.",
+        "Analyze the time series of cancellation rates and order counts to identify any seasonal trends or anomalies.",
+        "Conduct a cohort analysis of SP segment customers to assess retention and churn behavior over time."
+      ]
+    }
+  }
+]

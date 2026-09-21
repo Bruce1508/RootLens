@@ -90,3 +90,7 @@ jobs:
       - name: E2E test (mocked API, no backend needed)
         working-directory: apps/web
         run: npx playwright test
+
+      - name: Build and test the static demo export
+        working-directory: apps/web
+        run: npm run build:demo && npm run test:e2e:demo

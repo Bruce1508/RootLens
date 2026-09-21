@@ -1,0 +1,75 @@
+{
+  "investigation_id": "17f4ecd2-a471-4b18-84ab-911d90b7fe70",
+  "metric": "product_revenue",
+  "metric_definition_version": "product_revenue:v1",
+  "current_period": {
+    "start": "2018-02-01",
+    "end": "2018-02-28"
+  },
+  "comparison_period": {
+    "start": "2018-01-01",
+    "end": "2018-01-31"
+  },
+  "question": null,
+  "status": "completed",
+  "step_count": 5,
+  "query_count": 4,
+  "cancel_requested": false,
+  "created_at": "2026-09-12T06:31:56.516588",
+  "updated_at": "2026-09-12T06:32:36.325011",
+  "report": {
+    "status": "answered",
+    "headline": "Product Revenue Decline Driven by Cancellations in SP Segment",
+    "observed_change": {
+      "metric": "product_revenue",
+      "current_value": 837895.43,
+      "comparison_value": 945606.29,
+      "percent_change": -0.11390666616652897,
+      "evidence_ids": [
+        "e2760221-e350-403f-a66b-a189bee1c1b2"
+      ]
+    },
+    "findings": [
+      {
+        "claim": "Product revenue decreased by 18.2% in the period, with the SP segment contributing 60.0% of the total decline.",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "00d6a3fb-019f-4952-bbfe-bc46bbdc7106"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "Cancellation rate increased by 32.6% in the period, outpacing the 7.8% decrease in order count.",
+        "claim_type": "interpretation",
+        "evidence_ids": [],
+        "confidence": "high"
+      },
+      {
+        "claim": "The SP segment accounted for 60.0% of the total change in product_revenue.",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "e2760221-e350-403f-a66b-a189bee1c1b2"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "Order count decreased by 7.8%, while the cancellation rate increased by 32.6%.",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "ede03eec-8ac5-40b6-a940-3cd9c3b44779"
+        ],
+        "confidence": "high"
+      }
+    ],
+    "limitations": [
+      "The analysis does not account for external factors such as market trends or competitor activity.",
+      "The data does not include information on customer behavior changes or product quality issues.",
+      "The relationship between cancellation rate and revenue decline is inferred but not directly measured."
+    ],
+    "recommended_next_checks": [
+      "Review the SP segment's customer feedback and support tickets for patterns in cancellations.",
+      "Analyze the time series of cancellation rates and order counts to identify any seasonal trends or anomalies.",
+      "Conduct a cohort analysis of SP segment customers to assess retention and churn behavior over time."
+    ]
+  }
+}

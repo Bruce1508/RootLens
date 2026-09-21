@@ -1,0 +1,85 @@
+{
+  "investigation_id": "69182461-d134-401a-a2d9-566f5125c352",
+  "metric": "product_revenue",
+  "metric_definition_version": "product_revenue:v1",
+  "current_period": {
+    "start": "2018-01-01",
+    "end": "2018-01-31"
+  },
+  "comparison_period": {
+    "start": "2017-12-01",
+    "end": "2017-12-31"
+  },
+  "question": "Why did revenue decline?",
+  "status": "completed",
+  "step_count": 8,
+  "query_count": 6,
+  "cancel_requested": false,
+  "created_at": "2026-09-12T06:43:05.610388",
+  "updated_at": "2026-09-12T06:44:06.908283",
+  "report": {
+    "status": "partial",
+    "headline": "Product Revenue Growth Driven by SP Segment but Cancellation Rate Increase Raises Concerns",
+    "observed_change": {
+      "metric": "product_revenue",
+      "current_value": 945606.29,
+      "comparison_value": 742433.79,
+      "percent_change": 0.2736573991331941,
+      "evidence_ids": [
+        "c52f6ec6-0cca-48bf-8f61-321e23c9c9d9"
+      ]
+    },
+    "findings": [
+      {
+        "claim": "Product_revenue increased by 27.4% (evidence ID: 3be66378-ed39-4865-92f1-2e8a7c83bca7)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "3be66378-ed39-4865-92f1-2e8a7c83bca7"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "Order count increased by 27.8% (evidence ID: 6d536dc5-14a1-44e9-803a-3966949e6d3f)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "6d536dc5-14a1-44e9-803a-3966949e6d3f"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "Cancellation rate rose by 21.4% (evidence ID: 98c1f67a-6c49-4bd1-b295-65a46065d6b9)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "98c1f67a-6c49-4bd1-b295-65a46065d6b9"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "The SP segment contributed 46.4% of the total change (evidence ID: c52f6ec6-0cca-48bf-8f61-321e23c9c9d9)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "c52f6ec6-0cca-48bf-8f61-321e23c9c9d9"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "The cancellation rate increase suggests that revenue growth may be partially offset by cancellations (evidence ID: 98c1f67a-6c49-4bd1-b295-65a46065d6b9)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "98c1f67a-6c49-4bd1-b295-65a46065d6b9"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "limitations": [
+      "The hypothesis is inconclusive due to limited data on the relationship between cancellation rates and revenue growth.",
+      "The analysis does not account for external factors such as market trends or competitor activity.",
+      "The contribution of the SP segment to revenue growth is not fully validated without further analysis."
+    ],
+    "recommended_next_checks": [
+      "Investigate the correlation between cancellation rates and revenue growth using detailed transaction data.",
+      "Analyze the SP segment's performance to validate its contribution to revenue growth.",
+      "Conduct a deeper analysis of the reasons behind the increased cancellation rate."
+    ]
+  }
+}

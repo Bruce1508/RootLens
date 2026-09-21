@@ -5,11 +5,13 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
+    "build:demo": "NEXT_PUBLIC_DEMO_MODE=1 next build --turbopack",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:demo": "playwright test --config=playwright.demo.config.ts",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },

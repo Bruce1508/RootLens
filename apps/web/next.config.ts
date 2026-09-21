@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  ...(process.env.NEXT_PUBLIC_DEMO_MODE ? { output: "export" } : {}),
 };
 
 export default nextConfig;

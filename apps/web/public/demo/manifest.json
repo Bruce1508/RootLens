@@ -1,0 +1,90 @@
+[
+  {
+    "key": "GET /api/metrics/summary?comparison_end=2017-12-31&comparison_start=2017-12-01&current_end=2018-01-31&current_start=2018-01-01",
+    "file": "metrics-summary-default.json"
+  },
+  {
+    "key": "GET /api/investigations/69182461-d134-401a-a2d9-566f5125c352",
+    "file": "investigation-69182461-d134-401a-a2d9-566f5125c352.json"
+  },
+  {
+    "key": "GET /api/investigations/69182461-d134-401a-a2d9-566f5125c352/events",
+    "file": "investigation-69182461-d134-401a-a2d9-566f5125c352-events.json"
+  },
+  {
+    "key": "GET /api/investigations/69182461-d134-401a-a2d9-566f5125c352/evidence/c52f6ec6-0cca-48bf-8f61-321e23c9c9d9",
+    "file": "evidence-c52f6ec6-0cca-48bf-8f61-321e23c9c9d9.json"
+  },
+  {
+    "key": "GET /api/investigations/69182461-d134-401a-a2d9-566f5125c352/evidence/3be66378-ed39-4865-92f1-2e8a7c83bca7",
+    "file": "evidence-3be66378-ed39-4865-92f1-2e8a7c83bca7.json"
+  },
+  {
+    "key": "GET /api/investigations/69182461-d134-401a-a2d9-566f5125c352/evidence/6d536dc5-14a1-44e9-803a-3966949e6d3f",
+    "file": "evidence-6d536dc5-14a1-44e9-803a-3966949e6d3f.json"
+  },
+  {
+    "key": "GET /api/investigations/69182461-d134-401a-a2d9-566f5125c352/evidence/98c1f67a-6c49-4bd1-b295-65a46065d6b9",
+    "file": "evidence-98c1f67a-6c49-4bd1-b295-65a46065d6b9.json"
+  },
+  {
+    "key": "GET /api/investigations/17f4ecd2-a471-4b18-84ab-911d90b7fe70",
+    "file": "investigation-17f4ecd2-a471-4b18-84ab-911d90b7fe70.json"
+  },
+  {
+    "key": "GET /api/investigations/17f4ecd2-a471-4b18-84ab-911d90b7fe70/events",
+    "file": "investigation-17f4ecd2-a471-4b18-84ab-911d90b7fe70-events.json"
+  },
+  {
+    "key": "GET /api/investigations/17f4ecd2-a471-4b18-84ab-911d90b7fe70/evidence/e2760221-e350-403f-a66b-a189bee1c1b2",
+    "file": "evidence-e2760221-e350-403f-a66b-a189bee1c1b2.json"
+  },
+  {
+    "key": "GET /api/investigations/17f4ecd2-a471-4b18-84ab-911d90b7fe70/evidence/8b45bf68-ef1c-4ee8-a362-b5e0f0731221",
+    "file": "evidence-8b45bf68-ef1c-4ee8-a362-b5e0f0731221.json"
+  },
+  {
+    "key": "GET /api/investigations/17f4ecd2-a471-4b18-84ab-911d90b7fe70/evidence/00d6a3fb-019f-4952-bbfe-bc46bbdc7106",
+    "file": "evidence-00d6a3fb-019f-4952-bbfe-bc46bbdc7106.json"
+  },
+  {
+    "key": "GET /api/investigations/17f4ecd2-a471-4b18-84ab-911d90b7fe70/evidence/ede03eec-8ac5-40b6-a940-3cd9c3b44779",
+    "file": "evidence-ede03eec-8ac5-40b6-a940-3cd9c3b44779.json"
+  },
+  {
+    "key": "GET /api/investigations/f0c3ba87-8f54-495a-b3e5-b8531e064675",
+    "file": "investigation-f0c3ba87-8f54-495a-b3e5-b8531e064675.json"
+  },
+  {
+    "key": "GET /api/investigations/f0c3ba87-8f54-495a-b3e5-b8531e064675/events",
+    "file": "investigation-f0c3ba87-8f54-495a-b3e5-b8531e064675-events.json"
+  },
+  {
+    "key": "GET /api/investigations/f0c3ba87-8f54-495a-b3e5-b8531e064675/evidence/e6ba043a-c288-49db-878a-a7f0720be4ce",
+    "file": "evidence-e6ba043a-c288-49db-878a-a7f0720be4ce.json"
+  },
+  {
+    "key": "GET /api/investigations/f0c3ba87-8f54-495a-b3e5-b8531e064675/evidence/7764dd7b-f478-4bde-8610-64ca1e93dc35",
+    "file": "evidence-7764dd7b-f478-4bde-8610-64ca1e93dc35.json"
+  },
+  {
+    "key": "GET /api/investigations/f0c3ba87-8f54-495a-b3e5-b8531e064675/evidence/8595a0fb-6e94-4f97-b610-67cde1cf001e",
+    "file": "evidence-8595a0fb-6e94-4f97-b610-67cde1cf001e.json"
+  },
+  {
+    "key": "GET /api/investigations/f0c3ba87-8f54-495a-b3e5-b8531e064675/evidence/0d5a34b0-4b86-48a9-aa49-887d234cda61",
+    "file": "evidence-0d5a34b0-4b86-48a9-aa49-887d234cda61.json"
+  },
+  {
+    "key": "GET /api/investigations",
+    "file": "investigations-list.json"
+  },
+  {
+    "key": "GET /api/evaluations",
+    "file": "evaluations-list.json"
+  },
+  {
+    "key": "GET /api/evaluations/f51f692d-f106-430c-879f-dce4019e091a",
+    "file": "evaluation-f51f692d-f106-430c-879f-dce4019e091a.json"
+  }
+]

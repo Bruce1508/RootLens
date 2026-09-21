@@ -1,3 +1,5 @@
+import { resolveDemoFixture } from "@/lib/demo-data";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export interface MetricComparison {
@@ -147,6 +149,10 @@ async function fetchJson<T>(
   params?: Record<string, string>,
   init?: RequestInit,
 ): Promise<T> {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE) {
+    return resolveDemoFixture<T>(init?.method ?? "GET", path, params);
+  }
+
   const url = new URL(path, API_BASE_URL);
   if (params) {
     for (const [key, value] of Object.entries(params)) {

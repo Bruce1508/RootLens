@@ -1,0 +1,76 @@
+{
+  "investigation_id": "f0c3ba87-8f54-495a-b3e5-b8531e064675",
+  "metric": "product_revenue",
+  "metric_definition_version": "product_revenue:v1",
+  "current_period": {
+    "start": "2018-04-01",
+    "end": "2018-04-30"
+  },
+  "comparison_period": {
+    "start": "2018-03-01",
+    "end": "2018-03-31"
+  },
+  "question": "What drove the change in revenue this period?",
+  "status": "completed",
+  "step_count": 5,
+  "query_count": 4,
+  "cancel_requested": false,
+  "created_at": "2026-09-12T06:44:08.162011",
+  "updated_at": "2026-09-12T06:45:38.554105",
+  "report": {
+    "status": "answered",
+    "headline": "Product Revenue Increase Driven by Mix of Order Volume and Average Order Value",
+    "observed_change": {
+      "metric": "product_revenue",
+      "current_value": 993592.98,
+      "comparison_value": 981051.06,
+      "percent_change": 0.012784166402103399,
+      "evidence_ids": [
+        "e6ba043a-c288-49db-878a-a7f0720be4ce"
+      ]
+    },
+    "findings": [
+      {
+        "claim": "Product_revenue increased by 1.3% (evidence ID: 0d5a34b0-4b86-48a9-aa49-887d234cda61)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "0d5a34b0-4b86-48a9-aa49-887d234cda61"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "Order count decreased by 3.5% (evidence ID: 7764dd7b-f478-4bde-8610-64ca1e93dc35)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "7764dd7b-f478-4bde-8610-64ca1e93dc35"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "Cancellation rate decreased by 51.7% (evidence ID: 8595a0fb-6e94-4f97-b610-67cde1cf001e)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "8595a0fb-6e94-4f97-b610-67cde1cf001e"
+        ],
+        "confidence": "high"
+      },
+      {
+        "claim": "The largest contributing segment was 'PR', responsible for 122.5% of the total change (evidence ID: e6ba043a-c288-49db-878a-a7f0720be4ce)",
+        "claim_type": "interpretation",
+        "evidence_ids": [
+          "e6ba043a-c288-49db-878a-a7f0720be4ce"
+        ],
+        "confidence": "high"
+      }
+    ],
+    "limitations": [
+      "The data does not specify the exact reasons for the change in average order value",
+      "The analysis does not account for external factors such as market trends or competitor activity"
+    ],
+    "recommended_next_checks": [
+      "Inspect customer_state to understand if specific regions contributed to the average order value increase",
+      "Review product_category to identify if certain product types drove the revenue growth",
+      "Analyze seller performance to determine if specific sellers influenced the change in average order value"
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "evidence_id": "ede03eec-8ac5-40b6-a940-3cd9c3b44779",
+  "tool_name": "calculate_contribution",
+  "params": {
+    "limit": 10,
+    "metric": "product_revenue",
+    "dimension": "customer_state",
+    "current_period": {
+      "end": "2018-02-28",
+      "start": "2018-02-01"
+    },
+    "comparison_period": {
+      "end": "2018-01-31",
+      "start": "2018-01-01"
+    }
+  },
+  "sql": "see app.analytics.calculate_contribution (derived from segment_metric queries)",
+  "columns": [
+    "segment_value",
+    "change",
+    "share_of_total_change"
+  ],
+  "rows": [
+    {
+      "change": -64619.669999999984,
+      "segment_value": "SP",
+      "share_of_total_change": 0.5999364409494083
+    },
+    {
+      "change": -7155.149999999994,
+      "segment_value": "MG",
+      "share_of_total_change": 0.06642923471226574
+    },
+    {
+      "change": -6835.479999999996,
+      "segment_value": "SC",
+      "share_of_total_change": 0.0634613817028292
+    },
+    {
+      "change": -5393.240000000005,
+      "segment_value": "RJ",
+      "share_of_total_change": 0.05007145983236979
+    },
+    {
+      "change": -5044.26,
+      "segment_value": "PA",
+      "share_of_total_change": 0.04683148941527345
+    },
+    {
+      "change": -4749.4000000000015,
+      "segment_value": "BA",
+      "share_of_total_change": 0.044093975296455735
+    },
+    {
+      "change": -3962.010000000001,
+      "segment_value": "MT",
+      "share_of_total_change": 0.036783756066937
+    },
+    {
+      "change": 3468.41,
+      "segment_value": "DF",
+      "share_of_total_change": -0.032201116953295146
+    },
+    {
+      "change": -3101.2899999999972,
+      "segment_value": "ES",
+      "share_of_total_change": 0.028792732691949516
+    },
+    {
+      "change": -2603.0699999999997,
+      "segment_value": "RN",
+      "share_of_total_change": 0.024167200967479045
+    }
+  ],
+  "row_count": 10,
+  "execution_ms": 64.36770898289979,
+  "warnings": [],
+  "created_at": "2026-09-12T06:32:00.140816"
+}

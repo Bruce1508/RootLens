@@ -1,0 +1,14 @@
+{
+  "product_revenue": {
+    "current_value": 945606.29,
+    "comparison_value": 742433.79,
+    "absolute_change": 203172.5,
+    "percent_change": 0.2736573991331941
+  },
+  "orders": {
+    "current_value": 7189.0,
+    "comparison_value": 5623.0,
+    "absolute_change": 1566.0,
+    "percent_change": 0.27849902187444425
+  }
+}

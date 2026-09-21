@@ -1,0 +1,79 @@
+{
+  "evidence_id": "0d5a34b0-4b86-48a9-aa49-887d234cda61",
+  "tool_name": "calculate_contribution",
+  "params": {
+    "limit": 10,
+    "metric": "product_revenue",
+    "dimension": "customer_state",
+    "current_period": {
+      "end": "2018-04-30",
+      "start": "2018-04-01"
+    },
+    "comparison_period": {
+      "end": "2018-03-31",
+      "start": "2018-03-01"
+    }
+  },
+  "sql": "see app.analytics.calculate_contribution (derived from segment_metric queries)",
+  "columns": [
+    "segment_value",
+    "change",
+    "share_of_total_change"
+  ],
+  "rows": [
+    {
+      "change": 15359.749999999993,
+      "segment_value": "PR",
+      "share_of_total_change": 1.2246729368390235
+    },
+    {
+      "change": 12794.570000000007,
+      "segment_value": "SP",
+      "share_of_total_change": 1.02014444359397
+    },
+    {
+      "change": -8453.86,
+      "segment_value": "MG",
+      "share_of_total_change": -0.6740483115822817
+    },
+    {
+      "change": 7940.32,
+      "segment_value": "SC",
+      "share_of_total_change": 0.6331024276984741
+    },
+    {
+      "change": 5432.899999999994,
+      "segment_value": "RJ",
+      "share_of_total_change": 0.43317928993328186
+    },
+    {
+      "change": -5198.779999999999,
+      "segment_value": "PE",
+      "share_of_total_change": -0.4145122915789632
+    },
+    {
+      "change": -5058.630000000005,
+      "segment_value": "RS",
+      "share_of_total_change": -0.40333776646638114
+    },
+    {
+      "change": -4872.84,
+      "segment_value": "BA",
+      "share_of_total_change": -0.38852424509166295
+    },
+    {
+      "change": 4217.64,
+      "segment_value": "PI",
+      "share_of_total_change": 0.3362834398561006
+    },
+    {
+      "change": 2905.66,
+      "segment_value": "MT",
+      "share_of_total_change": 0.23167585186319298
+    }
+  ],
+  "row_count": 10,
+  "execution_ms": 70.6508329603821,
+  "warnings": [],
+  "created_at": "2026-09-12T06:45:02.463282"
+}

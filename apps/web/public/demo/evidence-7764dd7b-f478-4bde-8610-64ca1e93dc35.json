@@ -1,0 +1,34 @@
+{
+  "evidence_id": "7764dd7b-f478-4bde-8610-64ca1e93dc35",
+  "tool_name": "compare_periods",
+  "params": {
+    "metric": "orders",
+    "current_period": {
+      "end": "2018-04-30",
+      "start": "2018-04-01"
+    },
+    "comparison_period": {
+      "end": "2018-03-31",
+      "start": "2018-03-01"
+    }
+  },
+  "sql": "see app.analytics.compare_periods (parameterized query, not a raw SQL string)",
+  "columns": [
+    "current_value",
+    "comparison_value",
+    "absolute_change",
+    "percent_change"
+  ],
+  "rows": [
+    {
+      "current_value": 6919.0,
+      "percent_change": -0.03473772321428571,
+      "absolute_change": -249.0,
+      "comparison_value": 7168.0
+    }
+  ],
+  "row_count": 1,
+  "execution_ms": 13.631290988996625,
+  "warnings": [],
+  "created_at": "2026-09-12T06:44:08.186147"
+}

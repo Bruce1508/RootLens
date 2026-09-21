@@ -1,0 +1,22 @@
+[
+  {
+    "run_id": "f51f692d-f106-430c-879f-dce4019e091a",
+    "model_name": "qwen3:8b",
+    "split": "held_out",
+    "status": "completed",
+    "started_at": "2026-09-13T19:06:31.134563",
+    "completed_at": "2026-09-13T19:19:16.139806",
+    "aggregate_metrics": {
+      "scenario_count": 11,
+      "completion_rate": 1.0,
+      "average_latency_ms": 69406.31684071956,
+      "average_tool_calls": 4.363636363636363,
+      "dimension_accuracy": 0.0,
+      "abstention_accuracy": 0.8181818181818182,
+      "root_cause_accuracy": 0.5555555555555556,
+      "unsupported_claim_rate": 0.0,
+      "tool_execution_success_rate": 1.0,
+      "evidence_citation_validity_rate": 1.0
+    }
+  }
+]

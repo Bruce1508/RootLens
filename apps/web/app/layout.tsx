@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google";
 import Link from "next/link";
+import { DemoBanner } from "@/components/demo-banner";
 import "./globals.css";
 
 // IBM Plex across three roles, matching the three registers the product
@@ -67,6 +68,7 @@ export default function RootLayout({
       <body
         className={`${plexSans.variable} ${plexMono.variable} ${plexSerif.variable} min-h-screen`}
       >
+        {process.env.NEXT_PUBLIC_DEMO_MODE && <DemoBanner />}
         <header className="border-b border-line">
           <div className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-3">
             <Link href="/" className="flex items-center gap-2.5">
