@@ -138,7 +138,7 @@ engine makes — including, since Milestone 6, the engine's own reads.
 The dashboard's investigate/history flow (PRD acceptance criterion #4)
 is wired end-to-end, not just reachable via the API.
 
-**Tests** — 141 backend tests at **92% coverage** over `app/`, 22
+**Tests** — 141 backend tests at **92% coverage** over `app/`, 28
 frontend unit tests, and 4 Playwright end-to-end tests. Reproduce both
 numbers with `make coverage`.
 
@@ -151,8 +151,11 @@ coverage run cannot see. Vitest is configured to measure the whole
 happens to import — so that number stays honest as the app grows.
 
 What this *doesn't* mean: RootLens is not under active maintenance, and
-while CI runs on every push, there is no continuous deployment and no
-hosted demo — evaluating it means running it locally. Its [known
+while CI runs on every push, there is no continuous deployment — the
+[hosted demo](https://rootlens-demo.vercel.app) is a manually deployed
+static export of three real, captured investigations, not a live
+instance. Evaluating the full investigation loop against your own
+questions still means running it locally. Its [known
 limitations](#known-limitations) are recorded deliberately rather than
 smoothed over — read them before assuming a given behavior is a bug.
 
