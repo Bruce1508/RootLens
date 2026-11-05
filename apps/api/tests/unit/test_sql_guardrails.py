@@ -113,3 +113,20 @@ def test_keeps_a_limit_already_under_the_max() -> None:
 def test_rejects_invalid_sql() -> None:
     with pytest.raises(UnsafeSqlError):
         validate_and_bound("not valid sql at all (((")
+
+
+def test_rejects_select_into_an_allowlisted_table_name() -> None:
+    # Regression: _check_tables only ever inspected FROM/JOIN sources, so
+    # `INTO orders` passed untouched because "orders" is itself allowed —
+    # even though every allowlisted name already exists as a real table,
+    # so this could only ever fail at execution, not at validation.
+    with pytest.raises(UnsafeSqlError, match="SELECT INTO is not allowed"):
+        validate_and_bound("SELECT * INTO orders FROM customers")
+
+
+def test_rejects_select_into_a_temp_table() -> None:
+    # Regression: Postgres grants TEMP table creation to any role by
+    # default, independent of the rootlens_readonly SELECT-only grant —
+    # the guardrail, not the DB role, has to be the layer that stops this.
+    with pytest.raises(UnsafeSqlError, match="SELECT INTO is not allowed"):
+        validate_and_bound("SELECT * INTO TEMP evil_temp FROM customers")

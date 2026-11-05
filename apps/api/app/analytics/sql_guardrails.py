@@ -63,6 +63,12 @@ def _parse_single_select(query: str) -> exp.Select:
         raise UnsafeSqlError(
             f"only a single SELECT (or CTE) statement is allowed, got {type(statement).__name__}"
         )
+    if statement.args.get("into") is not None:
+        # SELECT ... INTO creates a table (or a session-local temp table,
+        # which Postgres lets any role do by default regardless of the
+        # rootlens_readonly grant) — this tool is read-only analytics, so
+        # there's no legitimate INTO target, allowlisted or not.
+        raise UnsafeSqlError("SELECT INTO is not allowed")
     return statement
 
 
