@@ -1,6 +1,6 @@
 .PHONY: setup up down migrate ingest ingest-fixtures db-reset \
         test test-backend test-frontend test-e2e coverage lint format typecheck \
-        eval-seed eval-run eval demo
+        eval-seed eval-run eval redteam demo
 
 setup:
 	cp -n .env.example .env || true
@@ -32,6 +32,9 @@ eval-run:
 	cd apps/api && uv run python -m app.evaluation.cli run --split held_out
 
 eval: eval-seed eval-run
+
+redteam:
+	cd apps/api && uv run python -m app.evaluation.cli redteam
 
 test: test-backend test-frontend
 
