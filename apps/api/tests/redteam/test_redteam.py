@@ -6,16 +6,20 @@ the real ad hoc SQL path, never a live Ollama daemon — this suite needs no
 skip-if and runs in every CI invocation of `pytest tests`.
 """
 
+import json
+
 import pytest
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from app.evaluation.redteam import (
+    _RESULTS_DIR,
     DB_PRIVILEGE_ENFORCED_CATEGORIES,
     check_db_role,
     check_guardrail,
     check_prompt_injection,
     load_cases,
+    run_and_export,
 )
 
 _CASES = load_cases()
@@ -76,3 +80,27 @@ def test_prompt_injection_case_never_reaches_the_database(
 ) -> None:
     result = check_prompt_injection(db_session, readonly_db_session, case)
     assert result.blocked, f"{case['id']} was NOT blocked: {result.detail}"
+
+
+def test_run_and_export_writes_the_committed_report(
+    readonly_engine: Engine, db_session: Session, readonly_db_session: Session
+) -> None:
+    """Exercises the actual `make redteam` / CLI path end to end and
+    produces the real docs/evaluation/results/redteam-<date>.{json,md}
+    report the upgrade plan requires — deliberately not cleaned up
+    afterward, unlike the ephemeral per-run eval reports in
+    tests/integration/test_runner.py, since this dated report is meant to
+    be the one committed artifact for the day's run."""
+    run_id = run_and_export(readonly_engine, db_session, readonly_db_session)
+
+    exported = json.loads((_RESULTS_DIR / f"{run_id}.json").read_text())
+    assert exported["run_id"] == run_id
+    assert exported["malicious_direct"]["total"] == len(_MALICIOUS)
+    assert exported["benign"]["total"] == len(_BENIGN)
+    assert exported["prompt_injection"]["total"] == len(_PROMPT_INJECTION)
+    assert exported["malicious_direct"]["true_bypasses"] == []
+    assert exported["benign"]["false_positives"] == []
+    assert exported["prompt_injection"]["bypasses"] == []
+
+    rendered = (_RESULTS_DIR / f"{run_id}.md").read_text()
+    assert f"# Red-team report — {run_id}" in rendered

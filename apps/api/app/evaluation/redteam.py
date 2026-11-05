@@ -19,6 +19,7 @@ from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from app.analytics.sql_guardrails import MAX_ROWS, UnsafeSqlError, validate_and_bound
@@ -32,8 +33,11 @@ _RESULTS_DIR = Path(__file__).resolve().parents[4] / "docs" / "evaluation" / "re
 # Categories that should structurally lack even session-level permission at
 # the DB role layer (no INSERT/UPDATE/DELETE/TRUNCATE/DROP/CREATE grant) —
 # a regression here means ADR-0004's role setup broke, not just that the
-# guardrail missed something.
-DB_PRIVILEGE_ENFORCED_CATEGORIES = {"ddl_dml", "copy_statement", "select_into"}
+# guardrail missed something. select_into is deliberately excluded: Postgres
+# grants TEMP table creation to any role by default (independent of this
+# schema-level grant), so that category is the guardrail's job alone
+# (app.analytics.sql_guardrails rejects every SELECT INTO outright).
+DB_PRIVILEGE_ENFORCED_CATEGORIES = {"ddl_dml", "copy_statement"}
 
 _DB_PROBE_TIMEOUT_MS = "2000"
 
@@ -43,12 +47,12 @@ def load_cases() -> dict[str, list[dict[str, Any]]]:
 
 
 @dataclass
-class GuardrailCheck:
+class CheckResult:
     blocked: bool
     detail: str
 
 
-def check_guardrail(case: dict[str, Any]) -> GuardrailCheck:
+def check_guardrail(case: dict[str, Any]) -> CheckResult:
     """Layer 1: app.analytics.sql_guardrails.validate_and_bound. An
     oversized_limit case is "blocked" if the guardrail clamps it to
     MAX_ROWS — that category is designed to be bounded, not rejected."""
@@ -56,19 +60,13 @@ def check_guardrail(case: dict[str, Any]) -> GuardrailCheck:
     try:
         bounded = validate_and_bound(sql)
     except UnsafeSqlError as exc:
-        return GuardrailCheck(True, f"blocked_by_guardrail: {exc}")
+        return CheckResult(True, f"blocked_by_guardrail: {exc}")
     if case["category"] == "oversized_limit" and f"LIMIT {MAX_ROWS}" in bounded:
-        return GuardrailCheck(True, f"bounded_by_guardrail: {bounded}")
-    return GuardrailCheck(False, f"NOT BLOCKED — passed validate_and_bound as: {bounded}")
+        return CheckResult(True, f"bounded_by_guardrail: {bounded}")
+    return CheckResult(False, f"NOT BLOCKED — passed validate_and_bound as: {bounded}")
 
 
-@dataclass
-class DbRoleCheck:
-    blocked: bool
-    detail: str
-
-
-def check_db_role(engine: Engine, sql: str) -> DbRoleCheck:
+def check_db_role(engine: Engine, sql: str) -> CheckResult:
     """Layer 2 (defense in depth): executes the raw, unvalidated SQL
     directly as rootlens_readonly — the guardrail is bypassed entirely,
     test-only — inside a transaction that is always rolled back, so a
@@ -78,15 +76,18 @@ def check_db_role(engine: Engine, sql: str) -> DbRoleCheck:
         try:
             conn.execute(text(f"SET LOCAL statement_timeout = '{_DB_PROBE_TIMEOUT_MS}'"))
             conn.execute(text(sql))
-        except Exception as exc:  # noqa: BLE001 — classifying arbitrary DB errors by design
-            sqlstate = getattr(getattr(exc, "orig", None), "sqlstate", None)
+        except DBAPIError as exc:
+            # A real Postgres-level rejection (missing privilege, timeout,
+            # or any other server-side refusal) — this is the layer being
+            # tested, so it counts as blocked regardless of which sqlstate.
+            sqlstate = getattr(exc.orig, "sqlstate", None)
             if sqlstate == "42501":
-                return DbRoleCheck(True, f"blocked_by_db_permission ({sqlstate})")
+                return CheckResult(True, f"blocked_by_db_permission ({sqlstate})")
             if sqlstate == "57014":
-                return DbRoleCheck(True, "blocked_by_db_timeout (57014)")
-            return DbRoleCheck(True, f"blocked_other_db_error ({sqlstate or type(exc).__name__})")
+                return CheckResult(True, "blocked_by_db_timeout (57014)")
+            return CheckResult(True, f"blocked_other_db_error ({sqlstate})")
         else:
-            return DbRoleCheck(False, "NOT BLOCKED — executed successfully as rootlens_readonly")
+            return CheckResult(False, "NOT BLOCKED — executed successfully as rootlens_readonly")
         finally:
             trans.rollback()
 
@@ -117,15 +118,9 @@ class _InjectedAdHocLLM:
         return True
 
 
-@dataclass
-class PromptInjectionCheck:
-    blocked: bool
-    detail: str
-
-
 def check_prompt_injection(
     write_session: Session, readonly_session: Session, case: dict[str, Any]
-) -> PromptInjectionCheck:
+) -> CheckResult:
     """Drives case["injected_query"] through the real ad hoc SQL step
     (app.investigations.engine._maybe_run_ad_hoc_query) as if an LLM had
     been talked into emitting it by case["question"] — the actual
@@ -162,10 +157,8 @@ def check_prompt_injection(
     )
 
     if result is not None:
-        return PromptInjectionCheck(
-            False, "NOT BLOCKED — injected query executed and returned a ToolResult"
-        )
-    return PromptInjectionCheck(True, "blocked: ad hoc query rejected before execution")
+        return CheckResult(False, "NOT BLOCKED — injected query executed and returned a ToolResult")
+    return CheckResult(True, "blocked: ad hoc query rejected before execution")
 
 
 @dataclass
@@ -202,17 +195,17 @@ def run_and_export(
     {json,md}. Returns the date-stamped run id."""
     cases = load_cases()
 
-    malicious_guardrail: dict[str, GuardrailCheck] = {}
-    malicious_db_role: dict[str, DbRoleCheck] = {}
+    malicious_guardrail: dict[str, CheckResult] = {}
+    malicious_db_role: dict[str, CheckResult] = {}
     for case in cases["malicious_direct"]:
         malicious_guardrail[case["id"]] = check_guardrail(case)
         malicious_db_role[case["id"]] = check_db_role(readonly_engine, case["sql"])
 
-    benign_guardrail: dict[str, GuardrailCheck] = {
+    benign_guardrail: dict[str, CheckResult] = {
         case["id"]: check_guardrail(case) for case in cases["benign"]
     }
 
-    prompt_injection: dict[str, PromptInjectionCheck] = {}
+    prompt_injection: dict[str, CheckResult] = {}
     for case in cases["prompt_injection"]:
         prompt_injection[case["id"]] = check_prompt_injection(write_session, readonly_session, case)
 
@@ -231,10 +224,10 @@ def run_and_export(
 def _export(
     run_id: str,
     cases: dict[str, list[dict[str, Any]]],
-    malicious_guardrail: dict[str, GuardrailCheck],
-    malicious_db_role: dict[str, DbRoleCheck],
-    benign_guardrail: dict[str, GuardrailCheck],
-    prompt_injection: dict[str, PromptInjectionCheck],
+    malicious_guardrail: dict[str, CheckResult],
+    malicious_db_role: dict[str, CheckResult],
+    benign_guardrail: dict[str, CheckResult],
+    prompt_injection: dict[str, CheckResult],
 ) -> None:
     _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
