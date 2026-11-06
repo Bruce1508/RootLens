@@ -119,3 +119,61 @@ edit), bigger than this phase's "one change at a time" budget was scoped for.
 redesign now (real scope increase), or document this as the phase's finding and
 move on to Phase 3/4, returning to accuracy work later with this analysis in hand.
 Raised to the user rather than picked unilaterally, given the size of the change.
+
+## Addendum: segment-first redesign attempt (same day)
+
+User approved attempting the segment-first redesign. Four methods were tried, each
+validated against real scenarios with a standalone probe (not guesswork, not wired
+into the engine) before deciding whether to implement it for real. None of the
+probe scripts below are committed — they're throwaway validation, kept here as the
+record of what was tried and why it didn't land.
+
+**Method 1 — rank candidate segments by revenue contribution** (today's
+`calculate_contribution`, run across all 3 dimensions, take the biggest
+`share_of_total_change`): the true segment was essentially never the top pick, even
+for single-dimension incidents. `ov-01`/`ov-05` delete orders in one specific
+state, yet revenue-contribution ranking picked a *different* state every time —
+dollar revenue per segment is too noisy month-to-month (a handful of high-value
+orders can swing a segment's total) to rank by at all.
+
+**Method 2 — rank by raw per-segment order-count / cancellation-rate percent
+change** (a direct, un-normalized version of the same idea): also unreliable —
+small-sample segments produce huge relative swings from pure noise, so the ranking
+is dominated by whichever segment happened to have the fewest orders that month,
+not the one with a real incident.
+
+**Method 3 — two-proportion z-test per segment** (statistically correct way to
+normalize for sample size: compares each segment's rate in the two periods against
+its own pooled binomial variance). Excluding `seller` (thousands of near-empty
+segments, pure noise) and testing only `customer_state` (27) × `product_category`
+(~70) ≈ 100 candidates: **2/14** scenarios tested got the right segment
+(`cs-01`, `ov-02`). Real-world demand data isn't i.i.d. binomial — it's
+overdispersed (seasonality, lumpy category/seller behavior) — so with ~100
+candidates tested, several produce an apparently "extreme" z purely by chance
+(classic multiple-comparisons), burying the real signal most of the time.
+
+**Method 4 — 6-month historical-baseline z-score** (score each segment's
+comparison→current change against *its own* trailing 6-month volatility, instead
+of a single-formula binomial variance — directly addresses overdispersion):
+
+| scenario family | correct dimension + segment |
+|---|---|
+| `cancellation_spike` (cs-01..07) | **4/7** (cs-01, cs-02, cs-03, cs-04) |
+| `order_volume_decline` / `seller_category_decline` (ov-01..07, sc-01, sc-05) | **0/9** |
+
+A real, measurable improvement for cancellation-type detection — but
+`product_category`'s larger candidate pool (~70) keeps out-competing the true
+`customer_state` segment (27) on every single order-volume scenario tested, the
+true state was never once the top pick. This is a different unsolved problem from
+the one Method 4 fixed, not a tuning tweak away.
+
+**Conclusion**: four methodologically distinct approaches, one clear partial win
+(cancellation detection) and one still-open problem (order-volume detection, the
+*larger* of the two groups — 14/24 dev scenarios). Decided **not** to ship a
+half-working mechanism into production code for this. A reliable fix likely needs
+either a properly multiple-comparison-corrected threshold scaled by each
+dimension's candidate count, a better null model for "order volume changed"
+(absolute per-segment count against its own baseline, not share-of-total, which
+conflates a segment's own change with everyone else's), or a different method
+entirely (structural-break detection, CUSUM) — real, dedicated effort, not
+something to land inside this phase's remaining budget.
