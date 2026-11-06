@@ -6,7 +6,7 @@
   ### A local-first AI business analyst that investigates *why* a metric changed — not just that it did
 
   [![CI](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml)
-  [![Backend coverage](https://img.shields.io/badge/backend%20coverage-92%25-2ea44f?style=flat-square)](#status)
+  [![Backend coverage](https://img.shields.io/badge/backend%20coverage-90%25-2ea44f?style=flat-square)](#status)
   [![License: MIT](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
   [![Status](https://img.shields.io/badge/milestones-0--6%20complete-2ea44f?style=flat-square)](#status)
   [![Backend](https://img.shields.io/badge/backend-FastAPI%20%2F%20Python%203.13-3776AB?style=flat-square&logo=python&logoColor=white)](apps/api)
@@ -138,7 +138,7 @@ engine makes — including, since Milestone 6, the engine's own reads.
 The dashboard's investigate/history flow (PRD acceptance criterion #4)
 is wired end-to-end, not just reachable via the API.
 
-**Tests** — 141 backend tests at **92% coverage** over `app/`, 28
+**Tests** — 361 backend tests at **90% coverage** over `app/`, 28
 frontend unit tests, and 4 Playwright end-to-end tests. Reproduce both
 numbers with `make coverage`.
 
