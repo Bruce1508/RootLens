@@ -3,7 +3,7 @@
 
   # RootLens
 
-  ### A local-first AI business analyst that investigates *why* a metric changed — not just that it did
+  ### An AI analyst that investigates why your metrics moved. Every claim in its reports cites the SQL and rows behind it, and it says so when the evidence doesn't support an answer.
 
   [![CI](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml)
   [![Backend coverage](https://img.shields.io/badge/backend%20coverage-90%25-2ea44f?style=flat-square)](#status)
@@ -24,6 +24,16 @@
 </div>
 
 <br>
+
+Ask most LLMs why revenue dropped and you'll get a confident paragraph
+back — right often enough to trust, wrong often enough that trusting
+it is risky. RootLens is built around the opposite failure mode: every
+claim in its report cites the SQL query and rows it came from, and
+when the evidence doesn't support an answer, it says so instead of
+guessing.
+
+**35 adversarial test scenarios. 90% backend test coverage. Zero
+unverified citations allowed in a shipped report.**
 
 RootLens takes a two-period metric comparison and turns it into a
 **grounded investigation**: it runs a bounded sequence of real SQL
