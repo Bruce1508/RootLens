@@ -39,7 +39,8 @@ Built against a full product requirements document (kept outside this repo).
 > RootLens is a completed **portfolio MVP**, not a maintained product.
 > All 7 milestones in the PRD (M0–M6) are implemented, tested, and
 > documented — see [Status](#status) below for exactly what that means
-> and what's explicitly out of scope.
+> and what's explicitly out of scope. Originally built as an entry for
+> the **CTRL+HACK+DEL 2.0 Hackathon**.
 
 <br>
 
