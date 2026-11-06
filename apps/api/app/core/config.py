@@ -27,3 +27,5 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3:8b"
     api_key: str | None = None
+    rate_limit_max_requests: int = 5
+    rate_limit_window_seconds: float = 60.0

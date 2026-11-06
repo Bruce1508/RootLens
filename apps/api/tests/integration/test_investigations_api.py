@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.auth import require_api_key
+from app.core.rate_limit import enforce_investigation_rate_limit
 from app.db.session import WriteSessionLocal, get_readonly_session, get_write_session
 from app.main import app
 from app.models import Investigation, InvestigationEvent
@@ -26,6 +27,7 @@ def test_post_investigation_returns_201_running_and_schedules_background_work(
     # covered by test_investigation_engine.py and the live test below).
     app.dependency_overrides[get_write_session] = lambda: db_session
     app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     app.dependency_overrides[get_readonly_session] = lambda: db_session
     try:
         with patch("app.investigations.service._run_in_background") as fake_run:
@@ -45,6 +47,7 @@ def test_post_investigation_returns_201_running_and_schedules_background_work(
 def test_post_investigation_rejects_overlapping_periods(db_session: Session) -> None:
     app.dependency_overrides[get_write_session] = lambda: db_session
     app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post(
@@ -64,6 +67,7 @@ def test_post_investigation_rejects_overlapping_periods(db_session: Session) -> 
 def test_post_investigation_rejects_unknown_metric(db_session: Session) -> None:
     app.dependency_overrides[get_write_session] = lambda: db_session
     app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post(
@@ -91,6 +95,7 @@ def test_cancel_investigation_sets_flag_on_a_running_investigation(db_session: S
     with patch("app.investigations.service._run_in_background"):
         app.dependency_overrides[get_write_session] = lambda: db_session
         app.dependency_overrides[require_api_key] = lambda: None
+        app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
         app.dependency_overrides[get_readonly_session] = lambda: db_session
         try:
             client = TestClient(app)
@@ -126,6 +131,7 @@ def test_cancel_investigation_is_a_no_op_on_an_already_terminal_investigation(
 
     app.dependency_overrides[get_write_session] = lambda: db_session
     app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post("/api/investigations/inv-terminal/cancel")
@@ -139,6 +145,7 @@ def test_cancel_investigation_is_a_no_op_on_an_already_terminal_investigation(
 def test_cancel_investigation_returns_404_for_unknown_id(db_session: Session) -> None:
     app.dependency_overrides[get_write_session] = lambda: db_session
     app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post("/api/investigations/does-not-exist/cancel")
@@ -199,6 +206,27 @@ def test_post_investigation_accepts_correct_bearer_token(db_session: Session) ->
     assert response.status_code == 201
 
 
+def test_post_investigation_returns_429_once_rate_limit_is_exceeded(db_session: Session) -> None:
+    from app.core.rate_limit import investigation_rate_limiter
+
+    app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[require_api_key] = lambda: None
+    investigation_rate_limiter.reset()
+    try:
+        with patch("app.investigations.service._run_in_background"):
+            client = TestClient(app)
+            for _ in range(investigation_rate_limiter._max_requests):
+                ok_response = client.post("/api/investigations", json=_VALID_BODY)
+                assert ok_response.status_code == 201
+
+            response = client.post("/api/investigations", json=_VALID_BODY)
+    finally:
+        app.dependency_overrides.clear()
+        investigation_rate_limiter.reset()
+
+    assert response.status_code == 429
+
+
 def _ollama_is_reachable() -> bool:
     try:
         httpx.get("http://localhost:11434/api/tags", timeout=1.0)
@@ -235,6 +263,7 @@ def test_full_investigation_completes_with_at_least_three_evidence_steps() -> No
     used to observe this particular test's own background writes.
     """
     app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
 

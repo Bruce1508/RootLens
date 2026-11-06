@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.auth import require_api_key
+from app.core.rate_limit import enforce_investigation_rate_limit
 from app.db.session import ReadOnlySessionLocal, get_readonly_session, get_write_session
 from app.investigations.report_schemas import InvestigationReport
 from app.investigations.schemas import (
@@ -71,7 +72,11 @@ def _to_view(investigation: Investigation, session: Session) -> InvestigationVie
     )
 
 
-@router.post("/api/investigations", status_code=201, dependencies=[Depends(require_api_key)])
+@router.post(
+    "/api/investigations",
+    status_code=201,
+    dependencies=[Depends(require_api_key), Depends(enforce_investigation_rate_limit)],
+)
 def post_investigation(
     request: InvestigationCreateRequest,
     background_tasks: BackgroundTasks,
