@@ -1,0 +1,250 @@
+{
+  "run_id": "9ae3790f-dc27-4666-8424-a709e419d0ec",
+  "model": "qwen3:8b",
+  "split": "held_out",
+  "aggregate_metrics": {
+    "root_cause_accuracy": 0.5555555555555556,
+    "dimension_accuracy": 0.0,
+    "evidence_citation_validity_rate": 0.8181818181818182,
+    "tool_execution_success_rate": 0.8181818181818182,
+    "unsupported_claim_rate": 0.0,
+    "abstention_accuracy": 0.8181818181818182,
+    "average_tool_calls": 4.181818181818182,
+    "average_latency_ms": 66364.5063334314,
+    "completion_rate": 0.8181818181818182,
+    "scenario_count": 11
+  },
+  "cases": [
+    {
+      "scenario_id": "cs-08",
+      "investigation_id": "f6b2f500-9d19-45ee-b7c9-0fd26fb5c0a9",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "product_category": "cama_mesa_banho"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 2,
+      "tool_call_count": 4,
+      "latency_ms": 60970.25612508878,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "cs-09",
+      "investigation_id": "f9177274-498a-4a9f-8f26-d86259b6ccb7",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 44812.39629187621,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "cs-10",
+      "investigation_id": "d4b1db3e-c185-45dd-9f32-3f6c43acea78",
+      "predicted_direction": null,
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SC"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": false,
+      "tool_execution_success": false,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 125016.20016712695,
+      "status": "execution_error",
+      "notes": "investigation raised: ReadTimeout: timed out"
+    },
+    {
+      "scenario_id": "ov-08",
+      "investigation_id": "38ed2abf-7c82-4547-8350-2fc6d96aab44",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 51223.67133409716,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ov-09",
+      "investigation_id": "9c8d27c0-76f7-4391-8be6-8b9a8945dec1",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "order_volume",
+      "predicted_dimensions": {
+        "product_category": "pcs"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 5,
+      "latency_ms": 56709.557874826714,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ov-10",
+      "investigation_id": "0830bee0-6b7f-4716-bebe-a10706883342",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 43010.77420799993,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "sc-08",
+      "investigation_id": "6edf673a-04e8-4374-ad57-a7497754d3b0",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 44147.09720783867,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "sc-09",
+      "investigation_id": "3a6e421c-24c5-4ec8-a0c2-6932830feaa7",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "order_volume",
+      "predicted_dimensions": {
+        "product_category": "cama_mesa_banho"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 61730.7923338376,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "sc-10",
+      "investigation_id": "715432c4-c933-4775-8092-875053860de8",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 44107.747375033796,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ua-04",
+      "investigation_id": "3bb59329-9404-466d-a0d7-674928d9e6f6",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "product_category": "relogios_presentes"
+      },
+      "correct_driver": null,
+      "correct_dimension": null,
+      "abstained": false,
+      "expected_abstain": true,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 5,
+      "latency_ms": 64143.0025419686,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ua-05",
+      "investigation_id": "2e208a7a-fe78-4066-8a59-4b3f5afff23a",
+      "predicted_direction": null,
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": null,
+      "correct_dimension": null,
+      "abstained": false,
+      "expected_abstain": true,
+      "evidence_citation_valid": false,
+      "tool_execution_success": false,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 134138.07420805097,
+      "status": "execution_error",
+      "notes": "investigation raised: ReadTimeout: timed out"
+    }
+  ]
+}
