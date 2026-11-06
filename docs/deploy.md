@@ -77,6 +77,19 @@ Edit `.env`:
 
 ## 4. Bring it up
 
+If you cloned as `root` (the normal case on a fresh Vultr box), the repo directory is
+root-owned — but Phase 4's Dockerfiles run the `api`/`web` containers as a non-root
+user (uid 1000). Docker bind-mounts the host directory as-is, so that non-root user
+can't write into `apps/api/.venv` or `apps/web/.next` unless the host directory is
+owned by uid 1000 first:
+
+```sh
+chown -R 1000:1000 apps/api apps/web
+```
+
+Do this **before** the next command — doing it after the containers have already
+created root-owned files inside those directories means removing those files first.
+
 ```sh
 docker compose up -d --build
 ```
@@ -100,7 +113,25 @@ docker compose exec api uv run python -m app.ingestion.cli import --source /app/
 
 `ufw` is active by default on a fresh Vultr Ubuntu image, allowing only `22`. Postgres
 stays closed — Phase 4 already bound it to `127.0.0.1` only, which is correct and
-needs no firewall rule:
+needs no firewall rule.
+
+**Before** enabling the public ports, scope a rule for Ollama's port (11434) to the
+Docker bridge networks only — never expose 11434 to the internet itself, Ollama has no
+auth of its own and would let anyone run free inference on the box:
+
+```sh
+ufw allow from 172.17.0.0/16 to any port 11434
+ufw allow from 172.18.0.0/16 to any port 11434
+```
+
+`172.17.0.0/16` is Docker's default bridge gateway, which is what `host.docker.internal`
+actually resolves to; `172.18.0.0/16` was this compose project's own bridge network on
+the proven deploy (run `docker network inspect <project>_default` if a different
+subnet shows up for you). Order matters: add these rules before — not after — opening
+the public ports below. Enabling `ufw` with containers already running and calling out
+to Ollama will *silently* block that traffic; the symptom is every investigation
+timing out at the first LLM call (`{"error": "timed out"}`) right after the fast
+analytics tool calls succeed, with no obvious firewall-related error.
 
 ```sh
 ufw allow 3000/tcp
@@ -126,10 +157,18 @@ Watch the printed investigation URL resolve in a browser against the live deploy
 
 ## Status
 
-Steps 1-6 above have **not yet been run against a real Vultr instance** — this is a
-runbook drafted from RootLens's actual `docker-compose.yml`/`Dockerfile`/`Makefile`
-and the proven Backtrace precedent, not yet verified against a live deploy. Update
-this section once it has been.
+Steps 1-6 above have been run against a real Vultr instance (`144.202.16.158`,
+`vx1-g-4c-16g`, 4 vCPU/16GB) and verified working end to end: a real investigation
+reached `status=completed` and both `/api/health` and the web root returned 200 from
+outside the box. The chown and scoped-ufw fixes above were both found and applied
+during that run and are now folded into the steps.
+
+One divergence from the repo not yet resolved: `docker-compose.yml` as committed binds
+`api`/`web` ports to `127.0.0.1` (correct for local dev), which steps 4-5 as written
+don't change — on the live box those bindings were changed to `0.0.0.0` directly on
+the server (not committed). Until this is formalized (either document the same `sed`
+here, or add a tracked `docker-compose.prod.yml`), step 5's firewall rules alone are
+not sufficient for a from-scratch deploy to be externally reachable.
 
 ## Not done yet (deliberately out of scope for this pass)
 
