@@ -152,6 +152,7 @@ def run_investigation(
             contribution_result,
             ad_hoc_result,
         )
+        _check_wall_clock_budget(started_at)
         _record_report(write_session, investigation, report)
         _record_event(
             write_session,
@@ -184,6 +185,14 @@ def run_investigation(
     write_session.commit()
 
 
+def _check_wall_clock_budget(started_at: float) -> None:
+    elapsed = time.monotonic() - started_at
+    if elapsed > _WALL_CLOCK_TIMEOUT_SECONDS:
+        raise _StoppingConditionExceeded(
+            "timed_out", f"exceeded {_WALL_CLOCK_TIMEOUT_SECONDS}s wall-clock budget"
+        )
+
+
 def _advance(
     write_session: Session, investigation: Investigation, started_at: float, *, is_query: bool
 ) -> None:
@@ -205,11 +214,7 @@ def _advance(
     if cancel_requested:
         raise _StoppingConditionExceeded("cancelled", "cancellation requested by user")
 
-    elapsed = time.monotonic() - started_at
-    if elapsed > _WALL_CLOCK_TIMEOUT_SECONDS:
-        raise _StoppingConditionExceeded(
-            "timed_out", f"exceeded {_WALL_CLOCK_TIMEOUT_SECONDS}s wall-clock budget"
-        )
+    _check_wall_clock_budget(started_at)
     if investigation.step_count > _MAX_STEPS:
         raise _StoppingConditionExceeded("partial", f"exceeded {_MAX_STEPS}-step budget")
     if investigation.query_count > _MAX_QUERIES:

@@ -342,6 +342,45 @@ def test_advance_raises_timed_out_when_wall_clock_budget_exceeded(db_session: Se
     assert exc_info.value.terminal_status == "timed_out"
 
 
+def test_run_investigation_marks_timed_out_when_report_generation_exceeds_wall_clock_budget(
+    db_session: Session,
+) -> None:
+    investigation = _make_investigation(db_session)
+    contribution_result = _tool_result(
+        "calculate_contribution",
+        [{"segment_value": "SP", "change": -200.0, "share_of_total_change": 0.8}],
+    )
+    narrative = _narrative_citing(_REVENUE_RESULT.evidence_id, contribution_result.evidence_id)
+
+    # 5 _advance calls (revenue/orders/cancellation/decompose/contribution) stay within
+    # budget; the 6th check — added after generate_report — is the one that must catch
+    # the overrun, proving the previously-uncovered final step is no longer a blind spot.
+    base = time.monotonic()
+    monotonic_values = [base, base + 1, base + 2, base + 3, base + 4, base + 5]
+    monotonic_values += [base + engine._WALL_CLOCK_TIMEOUT_SECONDS + 1] * 2
+
+    with (
+        patch.object(
+            engine,
+            "compare_periods",
+            side_effect=[_REVENUE_RESULT, _ORDERS_RESULT, _CANCELLATION_RESULT],
+        ),
+        patch.object(engine, "calculate_contribution", return_value=contribution_result),
+        patch.object(engine.time, "monotonic", side_effect=monotonic_values),
+    ):
+        engine.run_investigation(
+            db_session, db_session, _FakeLLM(_PLAN, narrative), investigation.investigation_id
+        )
+
+    db_session.refresh(investigation)
+    assert investigation.status == "timed_out"
+
+    report = db_session.execute(
+        select(Report).where(Report.investigation_id == investigation.investigation_id)
+    ).scalar_one_or_none()
+    assert report is None
+
+
 def test_advance_raises_cancelled_when_cancel_requested_is_set(db_session: Session) -> None:
     investigation = _make_investigation(db_session, cancel_requested=True)
     with pytest.raises(engine._StoppingConditionExceeded) as exc_info:
