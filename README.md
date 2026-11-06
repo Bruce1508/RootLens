@@ -6,7 +6,7 @@
   ### A local-first AI business analyst that investigates *why* a metric changed — not just that it did
 
   [![CI](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruce1508/RootLens/actions/workflows/ci.yml)
-  [![Backend coverage](https://img.shields.io/badge/backend%20coverage-92%25-2ea44f?style=flat-square)](#status)
+  [![Backend coverage](https://img.shields.io/badge/backend%20coverage-90%25-2ea44f?style=flat-square)](#status)
   [![License: MIT](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
   [![Status](https://img.shields.io/badge/milestones-0--6%20complete-2ea44f?style=flat-square)](#status)
   [![Backend](https://img.shields.io/badge/backend-FastAPI%20%2F%20Python%203.13-3776AB?style=flat-square&logo=python&logoColor=white)](apps/api)
@@ -33,14 +33,14 @@ executed query and rows that support it — no citation, no claim. It
 runs entirely on your machine, against a local Ollama model, with zero
 calls to a paid LLM API.
 
-See [`RootLens_PRD.md`](RootLens_PRD.md) for the full product
-requirements document this was built against.
+Built against a full product requirements document (kept outside this repo).
 
 > [!NOTE]
 > RootLens is a completed **portfolio MVP**, not a maintained product.
 > All 7 milestones in the PRD (M0–M6) are implemented, tested, and
 > documented — see [Status](#status) below for exactly what that means
-> and what's explicitly out of scope.
+> and what's explicitly out of scope. Originally built as an entry for
+> the **CTRL+HACK+DEL 2.0 Hackathon**.
 
 <br>
 
@@ -129,7 +129,7 @@ executing one; `make eval` produces it locally.
 
 ## Status
 
-All 7 milestones in `RootLens_PRD.md` (M0–M6) are complete: ingestion,
+All 7 milestones (M0–M6) are complete: ingestion,
 a bounded investigation loop backed by a local Ollama model,
 evidence-backed and citation-verified reports, the 35-scenario incident
 benchmark, SQL AST guardrails around the agent's one escape-valve tool,
@@ -138,7 +138,7 @@ engine makes — including, since Milestone 6, the engine's own reads.
 The dashboard's investigate/history flow (PRD acceptance criterion #4)
 is wired end-to-end, not just reachable via the API.
 
-**Tests** — 141 backend tests at **92% coverage** over `app/`, 28
+**Tests** — 361 backend tests at **90% coverage** over `app/`, 28
 frontend unit tests, and 4 Playwright end-to-end tests. Reproduce both
 numbers with `make coverage`.
 

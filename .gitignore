@@ -36,3 +36,7 @@ data/raw/*
 
 # Logs
 *.log
+
+# Local-only planning docs (kept on disk, not published in the repo)
+RootLens_PRD.md
+docs/superpowers/

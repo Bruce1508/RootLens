@@ -9,6 +9,12 @@ set -eu
 API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:3000}"
 
+if [ -z "${API_KEY:-}" ]; then
+    echo "API_KEY is not set — export it (same value as the API's .env)" >&2
+    echo "before running this script. Phase 4 made the create route fail closed." >&2
+    exit 1
+fi
+
 echo "Waiting for the API at ${API_BASE_URL}..."
 for _ in $(seq 1 30); do
     if curl -s -m 2 "${API_BASE_URL}/api/health" > /dev/null 2>&1; then
@@ -25,6 +31,7 @@ fi
 echo "Creating a demo investigation (fixture dataset's Jan 2018 vs Dec 2017)..."
 RESPONSE=$(curl -s -X POST "${API_BASE_URL}/api/investigations" \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${API_KEY}" \
     -d '{
         "metric": "product_revenue",
         "current_period": {"start": "2018-01-01", "end": "2018-01-31"},

@@ -8,9 +8,12 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_api_key
+from app.core.rate_limit import enforce_investigation_rate_limit
 from app.db.session import ReadOnlySessionLocal, get_readonly_session, get_write_session
 from app.investigations.report_schemas import InvestigationReport
 from app.investigations.schemas import (
+    TERMINAL_INVESTIGATION_STATUSES,
     EvidenceView,
     InvestigationCreateRequest,
     InvestigationEventView,
@@ -20,8 +23,6 @@ from app.investigations.service import create_investigation
 from app.models import Evidence, Investigation, InvestigationEvent, Report
 
 router = APIRouter()
-
-_TERMINAL_STATUSES = {"completed", "partial", "failed", "timed_out", "cancelled"}
 
 
 def _to_view(investigation: Investigation, session: Session) -> InvestigationView:
@@ -70,7 +71,11 @@ def _to_view(investigation: Investigation, session: Session) -> InvestigationVie
     )
 
 
-@router.post("/api/investigations", status_code=201)
+@router.post(
+    "/api/investigations",
+    status_code=201,
+    dependencies=[Depends(require_api_key), Depends(enforce_investigation_rate_limit)],
+)
 def post_investigation(
     request: InvestigationCreateRequest,
     background_tasks: BackgroundTasks,
@@ -83,7 +88,9 @@ def post_investigation(
     return _to_view(investigation, session)
 
 
-@router.post("/api/investigations/{investigation_id}/cancel")
+@router.post(
+    "/api/investigations/{investigation_id}/cancel", dependencies=[Depends(require_api_key)]
+)
 def cancel_investigation(
     investigation_id: str,
     session: Annotated[Session, Depends(get_write_session)],
@@ -211,7 +218,7 @@ async def _event_stream(investigation_id: str) -> AsyncGenerator[str]:
                     )
                 )
 
-            is_terminal = investigation.status in _TERMINAL_STATUSES
+            is_terminal = investigation.status in TERMINAL_INVESTIGATION_STATUSES
             final_status = investigation.status
         finally:
             session.close()

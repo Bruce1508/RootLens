@@ -67,6 +67,21 @@ def test_generate_structured_passes_schema_as_format() -> None:
     assert fake_client.generate.call_args.kwargs["format"] == DecompositionPlan.model_json_schema()
 
 
+def test_generate_structured_disables_thinking() -> None:
+    # qwen3:8b is a hybrid-thinking model; with think left at its default
+    # (enabled), a structured-output call can spend 100s of tokens on a
+    # hidden reasoning trace before emitting the JSON the caller actually
+    # wants, pushing latency past the client's own 120s timeout. The
+    # reasoning trace is pure overhead here since the only output that
+    # matters is the schema-validated `response` field.
+    provider, fake_client = _provider_with_fake_client()
+    fake_client.generate.return_value = SimpleNamespace(response=_VALID_PLAN_JSON)
+
+    provider.generate_structured("investigate revenue drop", DecompositionPlan)
+
+    assert fake_client.generate.call_args.kwargs["think"] is False
+
+
 def test_generate_structured_retries_once_on_invalid_json_then_succeeds() -> None:
     provider, fake_client = _provider_with_fake_client()
     fake_client.generate.side_effect = [
@@ -81,6 +96,7 @@ def test_generate_structured_retries_once_on_invalid_json_then_succeeds() -> Non
     retry_prompt = fake_client.generate.call_args_list[1].kwargs["prompt"]
     assert "Validation error" in retry_prompt
     assert "investigate revenue drop" in retry_prompt
+    assert fake_client.generate.call_args_list[1].kwargs["think"] is False
 
 
 def test_generate_structured_raises_after_two_failed_attempts() -> None:

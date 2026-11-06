@@ -1,3 +1,4 @@
+import logging
 import time
 import uuid
 
@@ -20,7 +21,9 @@ from app.prompts.catalog import get_prompt_definition
 _MAX_STEPS = 12
 _MAX_QUERIES = 15
 _MAX_SQL_CORRECTION_ATTEMPTS = 2  # FR-8: "no more than two correction attempts"
-_WALL_CLOCK_TIMEOUT_SECONDS = 120.0
+# 180s observed on the Vultr CPU-only deploy for a single investigation; 240s gives
+# headroom above that rather than the 120s baseline measured on dev hardware.
+_WALL_CLOCK_TIMEOUT_SECONDS = 240.0
 _ORDERS_METRIC = "orders"
 _CANCELLATION_RATE_METRIC = "cancellation_rate"
 
@@ -29,6 +32,8 @@ _CANCELLATION_RATE_METRIC = "cancellation_rate"
 # the evidence doesn't clearly implicate one segment.
 _SUPPORTED_SHARE_THRESHOLD = 0.5
 _HIGH_CONFIDENCE_SHARE_THRESHOLD = 0.75
+
+logger = logging.getLogger("rootlens.investigations")
 
 
 class _StoppingConditionExceeded(Exception):
@@ -53,6 +58,10 @@ def run_investigation(
         raise ValueError(f"unknown investigation_id: {investigation_id!r}")
 
     started_at = time.monotonic()
+    logger.info(
+        "investigation started",
+        extra={"investigation_id": investigation_id, "metric": investigation.metric},
+    )
     current_period = DateRange(
         start=investigation.current_period_start, end=investigation.current_period_end
     )
@@ -145,6 +154,7 @@ def run_investigation(
             contribution_result,
             ad_hoc_result,
         )
+        _check_wall_clock_budget(started_at)
         _record_report(write_session, investigation, report)
         _record_event(
             write_session,
@@ -162,8 +172,27 @@ def run_investigation(
         _record_event(write_session, investigation, "status_change", {"error": str(exc)})
         write_session.commit()
         raise
+    finally:
+        logger.info(
+            "investigation finished",
+            extra={
+                "investigation_id": investigation_id,
+                "status": investigation.status,
+                "latency_ms": round((time.monotonic() - started_at) * 1000, 1),
+                "step_count": investigation.step_count,
+                "query_count": investigation.query_count,
+            },
+        )
 
     write_session.commit()
+
+
+def _check_wall_clock_budget(started_at: float) -> None:
+    elapsed = time.monotonic() - started_at
+    if elapsed > _WALL_CLOCK_TIMEOUT_SECONDS:
+        raise _StoppingConditionExceeded(
+            "timed_out", f"exceeded {_WALL_CLOCK_TIMEOUT_SECONDS}s wall-clock budget"
+        )
 
 
 def _advance(
@@ -187,11 +216,7 @@ def _advance(
     if cancel_requested:
         raise _StoppingConditionExceeded("cancelled", "cancellation requested by user")
 
-    elapsed = time.monotonic() - started_at
-    if elapsed > _WALL_CLOCK_TIMEOUT_SECONDS:
-        raise _StoppingConditionExceeded(
-            "timed_out", f"exceeded {_WALL_CLOCK_TIMEOUT_SECONDS}s wall-clock budget"
-        )
+    _check_wall_clock_budget(started_at)
     if investigation.step_count > _MAX_STEPS:
         raise _StoppingConditionExceeded("partial", f"exceeded {_MAX_STEPS}-step budget")
     if investigation.query_count > _MAX_QUERIES:
@@ -363,6 +388,14 @@ def _maybe_run_ad_hoc_query(
                 investigation,
                 "ad_hoc_query_rejected",
                 {"query": query, "reason": reason, "attempt": attempt + 1},
+            )
+            logger.warning(
+                "guardrail rejected ad hoc query",
+                extra={
+                    "investigation_id": investigation.investigation_id,
+                    "reason": reason,
+                    "attempt": attempt + 1,
+                },
             )
             write_session.commit()
             if attempt + 1 >= _MAX_SQL_CORRECTION_ATTEMPTS:

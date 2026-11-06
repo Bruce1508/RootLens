@@ -1,8 +1,7 @@
 # RootLens architecture overview (Milestones 0–6)
 
 This document describes the system as it exists after all six milestones.
-See `RootLens_PRD.md` for the full product requirements; see
-`docs/decisions/` for the reasoning behind individual choices.
+See `docs/decisions/` for the reasoning behind individual choices.
 
 ## Services
 

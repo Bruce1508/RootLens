@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_api_key
+from app.core.rate_limit import enforce_investigation_rate_limit
 from app.db.session import WriteSessionLocal, get_readonly_session, get_write_session
 from app.main import app
 from app.models import Investigation, InvestigationEvent
@@ -24,6 +26,8 @@ def test_post_investigation_returns_201_running_and_schedules_background_work(
     # synchronous create/validate/respond path, not the full loop (that's
     # covered by test_investigation_engine.py and the live test below).
     app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     app.dependency_overrides[get_readonly_session] = lambda: db_session
     try:
         with patch("app.investigations.service._run_in_background") as fake_run:
@@ -42,6 +46,8 @@ def test_post_investigation_returns_201_running_and_schedules_background_work(
 
 def test_post_investigation_rejects_overlapping_periods(db_session: Session) -> None:
     app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post(
@@ -60,6 +66,8 @@ def test_post_investigation_rejects_overlapping_periods(db_session: Session) -> 
 
 def test_post_investigation_rejects_unknown_metric(db_session: Session) -> None:
     app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post(
@@ -86,6 +94,8 @@ def test_get_investigation_returns_404_for_unknown_id(db_session: Session) -> No
 def test_cancel_investigation_sets_flag_on_a_running_investigation(db_session: Session) -> None:
     with patch("app.investigations.service._run_in_background"):
         app.dependency_overrides[get_write_session] = lambda: db_session
+        app.dependency_overrides[require_api_key] = lambda: None
+        app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
         app.dependency_overrides[get_readonly_session] = lambda: db_session
         try:
             client = TestClient(app)
@@ -120,6 +130,8 @@ def test_cancel_investigation_is_a_no_op_on_an_already_terminal_investigation(
     db_session.commit()
 
     app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post("/api/investigations/inv-terminal/cancel")
@@ -132,6 +144,8 @@ def test_cancel_investigation_is_a_no_op_on_an_already_terminal_investigation(
 
 def test_cancel_investigation_returns_404_for_unknown_id(db_session: Session) -> None:
     app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
     try:
         client = TestClient(app)
         response = client.post("/api/investigations/does-not-exist/cancel")
@@ -139,6 +153,78 @@ def test_cancel_investigation_returns_404_for_unknown_id(db_session: Session) ->
         app.dependency_overrides.clear()
 
     assert response.status_code == 404
+
+
+def test_post_investigation_requires_bearer_token(db_session: Session) -> None:
+    app.dependency_overrides[get_write_session] = lambda: db_session
+    try:
+        with patch("app.core.auth.Settings") as fake_settings:
+            fake_settings.return_value.api_key = "secret-token"
+            client = TestClient(app)
+            response = client.post("/api/investigations", json=_VALID_BODY)
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+
+
+def test_post_investigation_rejects_wrong_bearer_token(db_session: Session) -> None:
+    app.dependency_overrides[get_write_session] = lambda: db_session
+    try:
+        with patch("app.core.auth.Settings") as fake_settings:
+            fake_settings.return_value.api_key = "secret-token"
+            client = TestClient(app)
+            response = client.post(
+                "/api/investigations",
+                json=_VALID_BODY,
+                headers={"Authorization": "Bearer wrong-token"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
+def test_post_investigation_accepts_correct_bearer_token(db_session: Session) -> None:
+    app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[get_readonly_session] = lambda: db_session
+    try:
+        with (
+            patch("app.core.auth.Settings") as fake_settings,
+            patch("app.investigations.service._run_in_background"),
+        ):
+            fake_settings.return_value.api_key = "secret-token"
+            client = TestClient(app)
+            response = client.post(
+                "/api/investigations",
+                json=_VALID_BODY,
+                headers={"Authorization": "Bearer secret-token"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+
+
+def test_post_investigation_returns_429_once_rate_limit_is_exceeded(db_session: Session) -> None:
+    from app.core.rate_limit import investigation_rate_limiter
+
+    app.dependency_overrides[get_write_session] = lambda: db_session
+    app.dependency_overrides[require_api_key] = lambda: None
+    investigation_rate_limiter.reset()
+    try:
+        with patch("app.investigations.service._run_in_background"):
+            client = TestClient(app)
+            for _ in range(investigation_rate_limiter._max_requests):
+                ok_response = client.post("/api/investigations", json=_VALID_BODY)
+                assert ok_response.status_code == 201
+
+            response = client.post("/api/investigations", json=_VALID_BODY)
+    finally:
+        app.dependency_overrides.clear()
+        investigation_rate_limiter.reset()
+
+    assert response.status_code == 429
 
 
 def _ollama_is_reachable() -> bool:
@@ -155,10 +241,12 @@ def test_full_investigation_completes_with_at_least_three_evidence_steps() -> No
     investigation completes end to end and uses at least three
     evidence-producing analytical steps.
 
-    No dependency overrides on the POST call — it goes through the app's
-    real get_write_session, which (because this whole pytest run is
-    invoked with DATABASE_URL pointed at rootlens_test) correctly targets
-    the test database. _run_in_background is deliberately left unstubbed:
+    No session dependency overrides on the POST call (require_api_key is
+    overridden below purely to bypass Phase 4 auth, which is unrelated to
+    what this test proves) — it goes through the app's real
+    get_write_session, which (because this whole pytest run is invoked
+    with DATABASE_URL pointed at rootlens_test) correctly targets the
+    test database. _run_in_background is deliberately left unstubbed:
     it opens its own fresh WriteSessionLocal against that same real
     engine, so this genuinely proves the background loop and a real local
     Ollama call, not a simulation.
@@ -174,11 +262,16 @@ def test_full_investigation_completes_with_at_least_three_evidence_steps() -> No
     invisible to _run_in_background's separate connection, so it can't be
     used to observe this particular test's own background writes.
     """
-    client = TestClient(app)
+    app.dependency_overrides[require_api_key] = lambda: None
+    app.dependency_overrides[enforce_investigation_rate_limit] = lambda: None
+    try:
+        client = TestClient(app)
 
-    post_response = client.post("/api/investigations", json=_VALID_BODY)
-    assert post_response.status_code == 201
-    investigation_id = post_response.json()["investigation_id"]
+        post_response = client.post("/api/investigations", json=_VALID_BODY)
+        assert post_response.status_code == 201
+        investigation_id = post_response.json()["investigation_id"]
+    finally:
+        app.dependency_overrides.clear()
 
     verify_session = WriteSessionLocal()
     try:
