@@ -33,8 +33,7 @@ executed query and rows that support it — no citation, no claim. It
 runs entirely on your machine, against a local Ollama model, with zero
 calls to a paid LLM API.
 
-See [`RootLens_PRD.md`](RootLens_PRD.md) for the full product
-requirements document this was built against.
+Built against a full product requirements document (kept outside this repo).
 
 > [!NOTE]
 > RootLens is a completed **portfolio MVP**, not a maintained product.
@@ -129,7 +128,7 @@ executing one; `make eval` produces it locally.
 
 ## Status
 
-All 7 milestones in `RootLens_PRD.md` (M0–M6) are complete: ingestion,
+All 7 milestones (M0–M6) are complete: ingestion,
 a bounded investigation loop backed by a local Ollama model,
 evidence-backed and citation-verified reports, the 35-scenario incident
 benchmark, SQL AST guardrails around the agent's one escape-valve tool,
