@@ -177,3 +177,18 @@ dimension's candidate count, a better null model for "order volume changed"
 conflates a segment's own change with everyone else's), or a different method
 entirely (structural-break detection, CUSUM) — real, dedicated effort, not
 something to land inside this phase's remaining budget.
+
+## Phase 2 outcome (final)
+
+No code change shipped. Before/after is before/before — the baseline numbers
+stand as both the "before" and the final reported number for this phase:
+
+| split | root_cause_accuracy | dimension_accuracy |
+|---|---|---|
+| dev | 23.8% (unchanged) | 4.8% (unchanged) |
+| held-out | 55.6% (unchanged) | 0.0% (unchanged) |
+
+Reported honestly per the plan's own instruction, rather than shipping an
+unvalidated fix to produce a different number. The root cause (global/diluted
+decomposition signal) and four attempted fixes are documented above for whoever
+picks this up next.
