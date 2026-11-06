@@ -21,7 +21,9 @@ from app.prompts.catalog import get_prompt_definition
 _MAX_STEPS = 12
 _MAX_QUERIES = 15
 _MAX_SQL_CORRECTION_ATTEMPTS = 2  # FR-8: "no more than two correction attempts"
-_WALL_CLOCK_TIMEOUT_SECONDS = 120.0
+# 180s observed on the Vultr CPU-only deploy for a single investigation; 240s gives
+# headroom above that rather than the 120s baseline measured on dev hardware.
+_WALL_CLOCK_TIMEOUT_SECONDS = 240.0
 _ORDERS_METRIC = "orders"
 _CANCELLATION_RATE_METRIC = "cancellation_rate"
 
