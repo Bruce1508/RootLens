@@ -24,7 +24,16 @@ class OllamaProvider:
         target_model = model or self._default_model
         schema_dict = schema.model_json_schema()
 
-        response = self._client.generate(model=target_model, prompt=prompt, format=schema_dict)
+        # qwen3 is a hybrid-thinking model: left at its default, it spends an
+        # unbounded, highly variable number of tokens on a hidden reasoning
+        # trace before emitting the JSON this call actually wants (observed
+        # 0.5s with think=False vs. 21.7s with the default on an identical
+        # prompt), which is what pushed several Phase 2 benchmark runs past
+        # the client's 120s timeout. The trace is pure overhead for a
+        # schema-validated structured-output call.
+        response = self._client.generate(
+            model=target_model, prompt=prompt, format=schema_dict, think=False
+        )
         try:
             return schema.model_validate_json(response.response or "")
         except ValidationError as first_error:
@@ -36,7 +45,7 @@ class OllamaProvider:
                 "Respond again with corrected JSON only, matching the schema exactly."
             )
             retry_response = self._client.generate(
-                model=target_model, prompt=retry_prompt, format=schema_dict
+                model=target_model, prompt=retry_prompt, format=schema_dict, think=False
             )
             try:
                 return schema.model_validate_json(retry_response.response or "")
