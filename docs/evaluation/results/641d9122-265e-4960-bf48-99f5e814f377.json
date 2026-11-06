@@ -1,0 +1,250 @@
+{
+  "run_id": "641d9122-265e-4960-bf48-99f5e814f377",
+  "model": "qwen3:8b",
+  "split": "held_out",
+  "aggregate_metrics": {
+    "root_cause_accuracy": 0.5555555555555556,
+    "dimension_accuracy": 0.0,
+    "evidence_citation_validity_rate": 1.0,
+    "tool_execution_success_rate": 1.0,
+    "unsupported_claim_rate": 0.0,
+    "abstention_accuracy": 0.8181818181818182,
+    "average_tool_calls": 4.2727272727272725,
+    "average_latency_ms": 43941.14067784341,
+    "completion_rate": 1.0,
+    "scenario_count": 11
+  },
+  "cases": [
+    {
+      "scenario_id": "cs-08",
+      "investigation_id": "04096b09-ec7a-4ae3-85f2-7bf7ea0fe5e0",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 52487.706458196044,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "cs-09",
+      "investigation_id": "c6961fd7-aecc-4dbf-8ce9-7b037c3f12b0",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 1,
+      "tool_call_count": 4,
+      "latency_ms": 34721.208582865074,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "cs-10",
+      "investigation_id": "fdacd30b-529f-4519-ba97-7469fa0d166a",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SC"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 1,
+      "tool_call_count": 5,
+      "latency_ms": 50664.16566586122,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ov-08",
+      "investigation_id": "15d5e214-f878-4bc9-86f4-8759713bc2be",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 5,
+      "latency_ms": 43751.18879205547,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ov-09",
+      "investigation_id": "1eec642e-8b42-4600-b3e2-047bb1025b9d",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "order_volume",
+      "predicted_dimensions": {
+        "product_category": "pcs"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 2,
+      "tool_call_count": 4,
+      "latency_ms": 45575.67712501623,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ov-10",
+      "investigation_id": "9d52b273-bb29-4eed-b871-1091c07d67f2",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "product_category": "relogios_presentes"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 2,
+      "tool_call_count": 4,
+      "latency_ms": 50852.24920907058,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "sc-08",
+      "investigation_id": "18113389-805d-4b46-b076-91e36d616662",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 25704.597915988415,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "sc-09",
+      "investigation_id": "d4bb1ef2-2b30-4dcd-9d2a-f18e7d476697",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "order_volume",
+      "predicted_dimensions": {
+        "product_category": "cama_mesa_banho"
+      },
+      "correct_driver": true,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 2,
+      "tool_call_count": 4,
+      "latency_ms": 60669.873708160594,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "sc-10",
+      "investigation_id": "db6809bc-f8bb-412d-91d6-bcdb2be3bd8e",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": false,
+      "correct_dimension": false,
+      "abstained": false,
+      "expected_abstain": false,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 2,
+      "tool_call_count": 4,
+      "latency_ms": 38138.510040938854,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ua-04",
+      "investigation_id": "5c7a596f-5738-45ff-b6f0-a42b69dcc8f0",
+      "predicted_direction": "decrease",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": null,
+      "correct_dimension": null,
+      "abstained": false,
+      "expected_abstain": true,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 0,
+      "tool_call_count": 4,
+      "latency_ms": 30400.69720800966,
+      "status": "fail",
+      "notes": null
+    },
+    {
+      "scenario_id": "ua-05",
+      "investigation_id": "70b1a933-f518-4c09-a32b-0f2fae84df78",
+      "predicted_direction": "increase",
+      "predicted_primary_driver": "cancellation",
+      "predicted_dimensions": {
+        "customer_state": "SP"
+      },
+      "correct_driver": null,
+      "correct_dimension": null,
+      "abstained": false,
+      "expected_abstain": true,
+      "evidence_citation_valid": true,
+      "tool_execution_success": true,
+      "unsupported_claim_count": 0,
+      "total_claim_count": 1,
+      "tool_call_count": 5,
+      "latency_ms": 50386.672750115395,
+      "status": "fail",
+      "notes": null
+    }
+  ]
+}
