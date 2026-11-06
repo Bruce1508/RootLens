@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import evaluations, health, investigations, metadata, metrics
 from app.core.config import Settings
+from app.core.logging import configure_logging
+
+configure_logging()
 
 settings = Settings()
 

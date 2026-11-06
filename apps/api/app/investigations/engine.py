@@ -1,3 +1,4 @@
+import logging
 import time
 import uuid
 
@@ -30,6 +31,8 @@ _CANCELLATION_RATE_METRIC = "cancellation_rate"
 _SUPPORTED_SHARE_THRESHOLD = 0.5
 _HIGH_CONFIDENCE_SHARE_THRESHOLD = 0.75
 
+logger = logging.getLogger("rootlens.investigations")
+
 
 class _StoppingConditionExceeded(Exception):
     def __init__(self, terminal_status: str, message: str) -> None:
@@ -53,6 +56,10 @@ def run_investigation(
         raise ValueError(f"unknown investigation_id: {investigation_id!r}")
 
     started_at = time.monotonic()
+    logger.info(
+        "investigation started",
+        extra={"investigation_id": investigation_id, "metric": investigation.metric},
+    )
     current_period = DateRange(
         start=investigation.current_period_start, end=investigation.current_period_end
     )
@@ -162,6 +169,17 @@ def run_investigation(
         _record_event(write_session, investigation, "status_change", {"error": str(exc)})
         write_session.commit()
         raise
+    finally:
+        logger.info(
+            "investigation finished",
+            extra={
+                "investigation_id": investigation_id,
+                "status": investigation.status,
+                "latency_ms": round((time.monotonic() - started_at) * 1000, 1),
+                "step_count": investigation.step_count,
+                "query_count": investigation.query_count,
+            },
+        )
 
     write_session.commit()
 
@@ -363,6 +381,14 @@ def _maybe_run_ad_hoc_query(
                 investigation,
                 "ad_hoc_query_rejected",
                 {"query": query, "reason": reason, "attempt": attempt + 1},
+            )
+            logger.warning(
+                "guardrail rejected ad hoc query",
+                extra={
+                    "investigation_id": investigation.investigation_id,
+                    "reason": reason,
+                    "attempt": attempt + 1,
+                },
             )
             write_session.commit()
             if attempt + 1 >= _MAX_SQL_CORRECTION_ATTEMPTS:

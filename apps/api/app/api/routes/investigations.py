@@ -13,6 +13,7 @@ from app.core.rate_limit import enforce_investigation_rate_limit
 from app.db.session import ReadOnlySessionLocal, get_readonly_session, get_write_session
 from app.investigations.report_schemas import InvestigationReport
 from app.investigations.schemas import (
+    TERMINAL_INVESTIGATION_STATUSES,
     EvidenceView,
     InvestigationCreateRequest,
     InvestigationEventView,
@@ -22,8 +23,6 @@ from app.investigations.service import create_investigation
 from app.models import Evidence, Investigation, InvestigationEvent, Report
 
 router = APIRouter()
-
-_TERMINAL_STATUSES = {"completed", "partial", "failed", "timed_out", "cancelled"}
 
 
 def _to_view(investigation: Investigation, session: Session) -> InvestigationView:
@@ -219,7 +218,7 @@ async def _event_stream(investigation_id: str) -> AsyncGenerator[str]:
                     )
                 )
 
-            is_terminal = investigation.status in _TERMINAL_STATUSES
+            is_terminal = investigation.status in TERMINAL_INVESTIGATION_STATUSES
             final_status = investigation.status
         finally:
             session.close()

@@ -7,6 +7,9 @@ from app.analytics.schemas import DateRange
 from app.investigations.report_schemas import InvestigationReport
 
 InvestigationStatus = Literal["running", "completed", "partial", "failed", "timed_out", "cancelled"]
+TERMINAL_INVESTIGATION_STATUSES = frozenset(
+    {"completed", "partial", "failed", "timed_out", "cancelled"}
+)
 HypothesisStatus = Literal["untested", "testing", "supported", "rejected", "inconclusive"]
 Confidence = Literal["low", "medium", "high"]
 
