@@ -26,3 +26,4 @@ class Settings(BaseSettings):
     ]
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3:8b"
+    api_key: str | None = None

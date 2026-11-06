@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_api_key
 from app.db.session import ReadOnlySessionLocal, get_readonly_session, get_write_session
 from app.investigations.report_schemas import InvestigationReport
 from app.investigations.schemas import (
@@ -70,7 +71,7 @@ def _to_view(investigation: Investigation, session: Session) -> InvestigationVie
     )
 
 
-@router.post("/api/investigations", status_code=201)
+@router.post("/api/investigations", status_code=201, dependencies=[Depends(require_api_key)])
 def post_investigation(
     request: InvestigationCreateRequest,
     background_tasks: BackgroundTasks,
@@ -83,7 +84,9 @@ def post_investigation(
     return _to_view(investigation, session)
 
 
-@router.post("/api/investigations/{investigation_id}/cancel")
+@router.post(
+    "/api/investigations/{investigation_id}/cancel", dependencies=[Depends(require_api_key)]
+)
 def cancel_investigation(
     investigation_id: str,
     session: Annotated[Session, Depends(get_write_session)],
